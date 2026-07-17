@@ -152,6 +152,8 @@ function parseCSV(text){
   return rows;
 }
 const num = v => { const n=parseFloat(String(v).replace(/[$,%\s]/g,"")); return isNaN(n)?null:n; };
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const parseWeekDate = s => { const d=new Date(s); return isNaN(d)?null:d; };
 
 /* ====== RENDER ====== */
 function fmtDate(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
@@ -162,24 +164,29 @@ function render(rows){
   const data = rows.slice(1).filter(r=>r.some(c=>c.trim()!==""));
   const idx = name => header.findIndex(h=>h.toLowerCase()===name.toLowerCase());
   const iWeek=idx("Week ending"), iTotal=idx("Total customers"), iNet=idx("Net adds"), iWait=idx("Waitlist size");
+  if(iWeek<0||iTotal<0||iNet<0){ showError("The Weekly Log columns have been renamed — expected \"Week ending\", \"Total customers\", and \"Net adds\"."); return; }
 
   // Logged weeks = rows with a Total customers or Net adds value (skip the baseline row for pace)
   const logged = data.filter(r => num(r[iTotal])!==null || num(r[iNet])!==null);
   const baselineRow = logged.find(r => /baseline/i.test(r[iWeek]||""));
   const weekRows = logged.filter(r => !/baseline/i.test(r[iWeek]||""));
 
-  // Current total: last row with a total; else baseline + summed net adds; else baseline
-  let current = BASELINE;
-  for(const r of logged){ const t=num(r[iTotal]); if(t!==null) current=t; }
-  if(current===BASELINE && weekRows.length){
-    const addSum = weekRows.reduce((s,r)=>s+(num(r[iNet])||0),0);
-    current = BASELINE + addSum;
+  // Current total: row with the latest week-ending date that has a total; else baseline + summed net adds
+  let current = BASELINE, foundTotal=false, bestDate=null;
+  for(const r of logged){
+    const t=num(r[iTotal]); if(t===null) continue;
+    const d=parseWeekDate(r[iWeek]);
+    if(bestDate===null || (d!==null && d>=bestDate)){ current=t; foundTotal=true; if(d!==null) bestDate=d; }
+  }
+  if(!foundTotal && weekRows.length){
+    current = BASELINE + weekRows.reduce((s,r)=>s+(num(r[iNet])||0),0);
   }
 
   const today = new Date();
   const daysLeft = daysBetween(today, DEADLINE);
   const weeksLeft = Math.max(daysLeft/7, 0.01);
-  const neededPerWeek = (GOAL-current)/weeksLeft;
+  const stillNeeded = Math.max(0, GOAL-current);
+  const neededPerWeek = stillNeeded/weeksLeft;
 
   // Pace: average net adds across logged weeks
   const netAdds = weekRows.map(r=>num(r[iNet])).filter(v=>v!==null);
@@ -196,7 +203,7 @@ function render(rows){
   // Cards
   document.getElementById("cards").innerHTML = `
     <div class="card"><div class="label">Members now</div><div class="big">${current.toLocaleString()}</div><div class="sub">of ${GOAL.toLocaleString()} goal</div></div>
-    <div class="card hot"><div class="label">Still needed</div><div class="big">${(GOAL-current).toLocaleString()}</div><div class="sub">${daysLeft} days left in 2026</div></div>
+    <div class="card hot"><div class="label">Still needed</div><div class="big">${stillNeeded===0?"🎉 0":stillNeeded.toLocaleString()}</div><div class="sub">${daysLeft} days left in 2026</div></div>
     <div class="card"><div class="label">Needed / week</div><div class="big">${neededPerWeek.toFixed(1)}</div><div class="sub">to hit Dec 31</div></div>
     <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">avg net adds/week ${badge}</div></div>
     <div class="card"><div class="label">Waitlist</div><div class="big">${lastWait===null?"—":lastWait.toLocaleString()}</div><div class="sub">warm pool outside zones</div></div>`;
@@ -223,7 +230,7 @@ function render(rows){
   for(const [key,t] of Object.entries(TARGETS)){
     let actual=0, present=false;
     if(t.combine){ t.combine.forEach(c=>{ if(c in sums){actual+=sums[c]; consumed.add(c); present=true;} }); }
-    else if(key in sums){ actual=sums[key]; consumed.add(key); present=true; }
+    if(key in sums){ actual+=sums[key]; consumed.add(key); present=true; }
     if(!present) continue;
     rowsHtml.push(channelRow(t.label, actual, t.lo, t.hi));
   }
@@ -239,8 +246,8 @@ function render(rows){
   } else {
     const showRows=(baselineRow?[baselineRow]:[]).concat(weekRows);
     tw.innerHTML=`<div class="table-scroll"><table>
-      <thead><tr>${header.map(h=>`<th>${h}</th>`).join("")}</tr></thead>
-      <tbody>${showRows.map(r=>`<tr${/baseline/i.test(r[iWeek]||"")?' class="baseline"':''}>${header.map((h,i)=>`<td>${(r[i]??"").trim()||"·"}</td>`).join("")}</tr>`).join("")}</tbody>
+      <thead><tr>${header.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead>
+      <tbody>${showRows.map(r=>`<tr${/baseline/i.test(r[iWeek]||"")?' class="baseline"':''}>${header.map((h,i)=>`<td>${esc((r[i]??"").trim())||"·"}</td>`).join("")}</tr>`).join("")}</tbody>
     </table></div>`;
   }
 
@@ -255,8 +262,9 @@ function channelRow(label, actual, lo, hi){
     const tW = lo!==null? Math.min(100,(hi-lo)/scale*100+ (hi-lo===0?1:0)) : 0;
     const targetHtml = lo!==null? `<div class="ch-target" style="left:${tLeft}%;width:${Math.max(tW, .8)}%"></div>`:"";
     const numsHtml = lo!==null? `<b>${actual.toLocaleString()}</b> / ${lo}–${hi}` : `<b>${actual.toLocaleString()}</b> / target TBD`;
-    return `<div class="ch-row"><div class="ch-name">${label}</div>
-      <div class="ch-track">${targetHtml}<div class="ch-fill" style="width:${Math.max(fillPct,0.8)}%"></div></div>
+    const fillHtml = actual>0? `<div class="ch-fill" style="width:${Math.max(fillPct,0.8)}%"></div>`:"";
+    return `<div class="ch-row"><div class="ch-name">${esc(label)}</div>
+      <div class="ch-track">${targetHtml}${fillHtml}</div>
       <div class="ch-nums">${numsHtml}</div></div>`;
   };
 }
