@@ -161,8 +161,9 @@ const MASTER = {
 const MASTER_TOTAL = MASTER.batches.reduce((s,b)=>s+b.n,0);
 
 // Lead pools, counted from the CCC Signups + Waitlist sheet (updated with the master list each week).
-// Verified by email match: neither pool contains anyone already on the confirmed-customer list.
-const POOLS = { asOf:"Jul 18", qualified:284, waitlist:364 };
+// Unique emails only (raw rows contain duplicates); verified by email match that neither pool
+// contains anyone already on the confirmed-customer list. `both` = people on both lists.
+const POOLS = { asOf:"Jul 18", qualified:242, waitlist:300, both:60 };
 
 // Target ranges from the Source Targets tab (July 7 team brief)
 const TARGETS = {
@@ -256,7 +257,7 @@ function render(rows){
     <div class="card hot"><div class="label">Still needed</div><div class="big">${stillNeeded===0?"🎉 0":stillNeeded.toLocaleString()}</div><div class="sub">${daysLeft} days left in 2026</div></div>
     <div class="card"><div class="label">Needed / week</div><div class="big">${neededPerWeek.toFixed(1)}</div><div class="sub">to hit Dec 31</div></div>
     <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">${paceSource} ${badge}</div></div>
-    <div class="card"><div class="label">Warm leads</div><div class="big">${(POOLS.qualified+POOLS.waitlist).toLocaleString()}</div><div class="sub">qualified + waitlist, ${POOLS.asOf}</div></div>`;
+    <div class="card"><div class="label">Warm leads</div><div class="big">${(POOLS.qualified+POOLS.waitlist-POOLS.both).toLocaleString()}</div><div class="sub">unique people, qualified + waitlist, ${POOLS.asOf}</div></div>`;
 
   // Progress bar
   const pct = Math.min(100, current/GOAL*100);
@@ -265,7 +266,8 @@ function render(rows){
   document.getElementById("baselineMark").textContent = `Launched Apr 15 with ${MASTER.batches[0].n} founding members`;
 
   // Pools
-  document.getElementById("poolsAsOf").textContent = POOLS.asOf;
+  document.getElementById("poolsAsOf").textContent =
+    `${POOLS.asOf}. Duplicate form submissions removed; ${POOLS.both} people appear on both lists and count once in the combined ${(POOLS.qualified+POOLS.waitlist-POOLS.both).toLocaleString()}`;
   document.getElementById("pools").innerHTML = `
     <div class="pool"><div class="num">${POOLS.qualified.toLocaleString()}</div>
       <div><div class="what">Qualified leads</div><div class="how">In-zone address confirmed, never finished payment. Job: re-engagement emails + Sasha's calls.</div></div></div>
