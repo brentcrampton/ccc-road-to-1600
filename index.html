@@ -142,6 +142,8 @@
 <script>
 /* ====== CONFIG ====== */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRl4kwEpiLnOkxVcwaPJqoXO9beOaH_P9wb8uSkzPJCNpFkgH61I_Ml_Kg-y44BKKT3lfO3dtn3-065/pub?gid=1242657682&single=true&output=csv"; // Weekly Log tab, published to web as CSV
+// "Live counts" tab of the Jotform-fed signups sheet — aggregate numbers only, no personal data
+const LIVE_COUNTS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ7nHubVwjBcd2AFXjIvGVCI78Rfi1tiBu6X2hh8V2yKyTmfpESBLyTUxEz6SzbN91vFPHmhjl8w4p8/pub?gid=952458942&single=true&output=csv";
 const GOAL = 1600;
 const BASELINE = 213;             // verified July 1, 2026
 const BASELINE_DATE = new Date(2026, 6, 1);
@@ -201,7 +203,7 @@ const parseWeekDate = s => { const d=new Date(s); return isNaN(d)?null:d; };
 function fmtDate(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
 function daysBetween(a,b){ return Math.max(0, Math.round((b-a)/86400000)); }
 
-function render(rows){
+function render(rows, live){
   const header = rows[0].map(h=>h.trim());
   const data = rows.slice(1).filter(r=>r.some(c=>c.trim()!==""));
   const idx = name => header.findIndex(h=>h.toLowerCase()===name.toLowerCase());
@@ -244,6 +246,13 @@ function render(rows){
   }
   const lastWait = (()=>{ let w=null; for(const r of logged){const v=num(r[iWait]); if(v!==null)w=v;} return w; })();
 
+  // Pools: live from the signup feed when available, baked numbers otherwise
+  const pq = live? live.qualified_unique : POOLS.qualified;
+  const pw = live? live.waitlist_unique : POOLS.waitlist;
+  const pb = live? (live.both_lists||0) : POOLS.both;
+  const poolTotal = pq+pw-pb;
+  const poolWhen = live? "live from the signup feed" : `as of ${POOLS.asOf}`;
+
   // Status badge
   let badge;
   if(avgPace===null) badge = `<span class="badge wait">No weeks logged yet</span>`;
@@ -257,7 +266,8 @@ function render(rows){
     <div class="card hot"><div class="label">Still needed</div><div class="big">${stillNeeded===0?"🎉 0":stillNeeded.toLocaleString()}</div><div class="sub">${daysLeft} days left in 2026</div></div>
     <div class="card"><div class="label">Needed / week</div><div class="big">${neededPerWeek.toFixed(1)}</div><div class="sub">to hit Dec 31</div></div>
     <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">${paceSource} ${badge}</div></div>
-    <div class="card"><div class="label">Warm leads</div><div class="big">${(POOLS.qualified+POOLS.waitlist-POOLS.both).toLocaleString()}</div><div class="sub">unique people, qualified + waitlist, ${POOLS.asOf}</div></div>`;
+    <div class="card"><div class="label">Warm leads</div><div class="big">${poolTotal.toLocaleString()}</div><div class="sub">unique people, qualified + waitlist, ${poolWhen}</div></div>
+    ${live && "new_leads_7d" in live ? `<div class="card"><div class="label">New leads, last 7 days</div><div class="big">${live.new_leads_7d.toLocaleString()}</div><div class="sub">signed up via the form, not yet onboarded</div></div>` : ""}`;
 
   // Progress bar
   const pct = Math.min(100, current/GOAL*100);
@@ -267,11 +277,11 @@ function render(rows){
 
   // Pools
   document.getElementById("poolsAsOf").textContent =
-    `${POOLS.asOf}. Duplicate form submissions removed; ${POOLS.both} people appear on both lists and count once in the combined ${(POOLS.qualified+POOLS.waitlist-POOLS.both).toLocaleString()}`;
+    `${poolWhen}. Duplicate form submissions removed; ${pb} people appear on both lists and count once in the combined ${poolTotal.toLocaleString()}`;
   document.getElementById("pools").innerHTML = `
-    <div class="pool"><div class="num">${POOLS.qualified.toLocaleString()}</div>
+    <div class="pool"><div class="num">${pq.toLocaleString()}</div>
       <div><div class="what">Qualified leads</div><div class="how">In-zone address confirmed, never finished payment. Job: re-engagement emails + Sasha's calls.</div></div></div>
-    <div class="pool wait"><div class="num">${POOLS.waitlist.toLocaleString()}</div>
+    <div class="pool wait"><div class="num">${pw.toLocaleString()}</div>
       <div><div class="what">Waitlist</div><div class="how">Outside current service area, waiting for their neighborhood to open. Job: zone-launch countdowns.</div></div></div>`;
 
   // One timeline: onboarding batches from the master list, then logged weeks from the tracker (blue)
@@ -349,10 +359,21 @@ function showError(msg){
     `<div class="error-state"><b>Couldn't reach the tracker.</b> ${msg} — try a refresh, or check that the Weekly Log tab is still published to the web.</div>`);
 }
 
-fetch(SHEET_CSV_URL,{cache:"no-store"})
-  .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
-  .then(t=>{ const rows=parseCSV(t); if(!rows.length||rows[0].length<3) throw new Error("Unexpected sheet format"); render(rows); })
-  .catch(e=>showError(e.message));
+Promise.allSettled([
+  fetch(SHEET_CSV_URL,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); }),
+  fetch(LIVE_COUNTS_CSV,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
+]).then(([weekly, liveRes])=>{
+  if(weekly.status!=="fulfilled"){ showError(weekly.reason.message); return; }
+  const rows=parseCSV(weekly.value);
+  if(!rows.length||rows[0].length<3){ showError("Unexpected sheet format"); return; }
+  let live=null;
+  if(liveRes.status==="fulfilled"){
+    live={};
+    parseCSV(liveRes.value).forEach(r=>{ const v=num(r[1]); if(r[0]&&v!==null) live[r[0].trim()]=v; });
+    if(!("qualified_unique" in live)) live=null; // shape check — fall back to baked numbers
+  }
+  render(rows, live);
+});
 </script>
 </body>
 </html>
