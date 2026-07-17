@@ -65,6 +65,14 @@
   tbody tr:hover{background:#fdf9f2}
   .table-scroll{overflow-x:auto;border-radius:14px}
 
+  .pools{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .pool{background:#fff;border-radius:14px;padding:22px 24px;box-shadow:0 6px 18px rgba(15,58,35,.08);display:flex;align-items:center;gap:18px}
+  .pool .num{font-family:'Raleway',sans-serif;font-weight:900;font-size:2.6rem;color:var(--earthy)}
+  .pool.wait .num{color:var(--gem)}
+  .pool .what{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:.72rem}
+  .pool .how{font-size:.76rem;color:var(--grass);margin-top:3px}
+  @media(max-width:640px){.pools{grid-template-columns:1fr}}
+  .batch-col.logged .batch-bar{background:var(--gem)}
   .batch-chart{display:flex;align-items:flex-end;gap:6px;height:190px;background:#fff;border-radius:14px;padding:18px 18px 8px;box-shadow:0 6px 18px rgba(15,58,35,.08)}
   .batch-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
   .batch-count{font-family:'Catamaran',sans-serif;font-weight:800;font-size:.72rem;margin-bottom:2px}
@@ -102,6 +110,12 @@
   </section>
 
   <section>
+    <h2>The pools: who could join next</h2>
+    <div class="note">Everyone below wants in but isn't a member yet — checked by email against the confirmed-customer list, so nobody is double-counted. Updated <span id="poolsAsOf"></span>.</div>
+    <div class="pools" id="pools"></div>
+  </section>
+
+  <section>
     <h2>Signups by onboarding week</h2>
     <div class="note" id="batchNote"></div>
     <div class="batch-chart" id="batchChart"></div>
@@ -114,8 +128,8 @@
   </section>
 
   <section>
-    <h2>Week by week</h2>
-    <div class="note" id="tableNote">Every logged week from the tracker. Weeks not yet logged don't appear.</div>
+    <h2>The marketing log: what drove each week</h2>
+    <div class="note" id="tableNote">The chart above counts who joined; this table explains why — signups by channel plus ad spend, logged weekly by the team. Weeks not yet logged don't appear.</div>
     <div id="tableWrap"></div>
   </section>
 
@@ -145,6 +159,10 @@ const MASTER = {
   ]
 };
 const MASTER_TOTAL = MASTER.batches.reduce((s,b)=>s+b.n,0);
+
+// Lead pools, counted from the CCC Signups + Waitlist sheet (updated with the master list each week).
+// Verified by email match: neither pool contains anyone already on the confirmed-customer list.
+const POOLS = { asOf:"Jul 18", qualified:284, waitlist:364 };
 
 // Target ranges from the Source Targets tab (July 7 team brief)
 const TARGETS = {
@@ -238,7 +256,7 @@ function render(rows){
     <div class="card hot"><div class="label">Still needed</div><div class="big">${stillNeeded===0?"🎉 0":stillNeeded.toLocaleString()}</div><div class="sub">${daysLeft} days left in 2026</div></div>
     <div class="card"><div class="label">Needed / week</div><div class="big">${neededPerWeek.toFixed(1)}</div><div class="sub">to hit Dec 31</div></div>
     <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">${paceSource} ${badge}</div></div>
-    <div class="card"><div class="label">Waitlist</div><div class="big">${lastWait===null?"—":lastWait.toLocaleString()}</div><div class="sub">warm pool outside zones</div></div>`;
+    <div class="card"><div class="label">Warm leads</div><div class="big">${(POOLS.qualified+POOLS.waitlist).toLocaleString()}</div><div class="sub">qualified + waitlist, ${POOLS.asOf}</div></div>`;
 
   // Progress bar
   const pct = Math.min(100, current/GOAL*100);
@@ -246,12 +264,27 @@ function render(rows){
   fill.style.width=pct+"%"; fill.textContent=pct.toFixed(1)+"%";
   document.getElementById("baselineMark").textContent = `Launched Apr 15 with ${MASTER.batches[0].n} founding members`;
 
-  // Onboarding-week chart (from the master confirmed-customer list, updated manually)
-  const maxBatch = Math.max(...MASTER.batches.map(b=>b.n));
+  // Pools
+  document.getElementById("poolsAsOf").textContent = POOLS.asOf;
+  document.getElementById("pools").innerHTML = `
+    <div class="pool"><div class="num">${POOLS.qualified.toLocaleString()}</div>
+      <div><div class="what">Qualified leads</div><div class="how">In-zone address confirmed, never finished payment. Job: re-engagement emails + Sasha's calls.</div></div></div>
+    <div class="pool wait"><div class="num">${POOLS.waitlist.toLocaleString()}</div>
+      <div><div class="what">Waitlist</div><div class="how">Outside current service area, waiting for their neighborhood to open. Job: zone-launch countdowns.</div></div></div>`;
+
+  // One timeline: onboarding batches from the master list, then logged weeks from the tracker (blue)
+  const timeline = MASTER.batches.map(b=>({...b}));
+  const lastBatchDate = new Date("2026-07-15");
+  weekRows.forEach(r=>{
+    const d=parseWeekDate(r[iWeek]), n=num(r[iNet]);
+    if(d!==null && n!==null && d>lastBatchDate)
+      timeline.push({week:d.toLocaleDateString("en-US",{month:"short",day:"numeric"}), n, logged:true});
+  });
+  const maxBatch = Math.max(...timeline.map(b=>b.n));
   document.getElementById("batchNote").textContent =
-    `New members confirmed in each Wednesday onboarding batch since the Apr 15 launch — ${MASTER_TOTAL} total, from the master customer list (updated ${MASTER.asOf}).`;
-  document.getElementById("batchChart").innerHTML = MASTER.batches.map(b=>`
-    <div class="batch-col${b.launch?" launch":""}">
+    `One timeline since the Apr 15 launch: green bars are confirmed members per Wednesday onboarding batch (master list, updated ${MASTER.asOf}); blue bars are weeks logged in the tracker as they happen.`;
+  document.getElementById("batchChart").innerHTML = timeline.map(b=>`
+    <div class="batch-col${b.launch?" launch":""}${b.logged?" logged":""}">
       <div class="batch-count">${b.n}</div>
       <div class="batch-bar" style="height:${Math.max(b.n/maxBatch*100,3)}%"></div>
       <div class="batch-week">${esc(b.week)}</div>
