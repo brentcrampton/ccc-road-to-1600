@@ -87,12 +87,11 @@
 
   <section>
     <h2>Progress to goal</h2>
-    <div class="note">1,600 total members by Dec 31, 2026 · the orange line is the real deadline — 1,544 by Nov 30, before December coasts.</div>
+    <div class="note">1,600 total members by Dec 31, 2026.</div>
     <div class="progress-shell" id="progressShell">
       <div class="progress-fill" id="progressFill" style="width:0%">0%</div>
     </div>
     <div class="progress-marks"><span id="baselineMark"></span><span>1,600</span></div>
-    <div class="nov-label" id="novLabel"></div>
   </section>
 
   <section>
@@ -120,8 +119,6 @@ const GOAL = 1600;
 const BASELINE = 213;             // verified July 1, 2026
 const BASELINE_DATE = new Date(2026, 6, 1);
 const DEADLINE = new Date(2026, 11, 31);
-const NOV30 = new Date(2026, 10, 30);
-const NOV30_TARGET = 1544;
 
 // Target ranges from the Source Targets tab (July 7 team brief)
 const TARGETS = {
@@ -213,10 +210,6 @@ function render(rows){
   const fill=document.getElementById("progressFill");
   fill.style.width=pct+"%"; fill.textContent=pct.toFixed(1)+"%";
   document.getElementById("baselineMark").textContent = `Started at ${BASELINE} (Jul 1)`;
-  const novPct = NOV30_TARGET/GOAL*100;
-  const shell=document.getElementById("progressShell");
-  const mark=document.createElement("div"); mark.className="nov-mark"; mark.style.left=novPct+"%"; shell.appendChild(mark);
-  document.getElementById("novLabel").textContent = `▲ Real deadline: ${NOV30_TARGET.toLocaleString()} by Nov 30 (${daysBetween(today,NOV30)} days away)`;
 
   // Channels
   const chDiv=document.getElementById("channels");
