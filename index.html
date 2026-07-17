@@ -65,6 +65,13 @@
   tbody tr:hover{background:#fdf9f2}
   .table-scroll{overflow-x:auto;border-radius:14px}
 
+  .batch-chart{display:flex;align-items:flex-end;gap:6px;height:190px;background:#fff;border-radius:14px;padding:18px 18px 8px;box-shadow:0 6px 18px rgba(15,58,35,.08)}
+  .batch-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+  .batch-count{font-family:'Catamaran',sans-serif;font-weight:800;font-size:.72rem;margin-bottom:2px}
+  .batch-bar{width:100%;max-width:44px;background:var(--grass);border-radius:6px 6px 0 0;transition:height .9s ease}
+  .batch-col.launch .batch-bar{background:var(--earthy)}
+  .batch-col:last-child .batch-bar{background:var(--tiger)}
+  .batch-week{font-size:.6rem;color:var(--grass);margin-top:5px;white-space:nowrap;transform:rotate(-38deg);transform-origin:top center;height:26px}
   .empty-state{background:#fff;border:2px dashed var(--pale);border-radius:14px;padding:28px;text-align:center;color:var(--grass);font-size:.85rem}
   .error-state{background:#fff;border-left:6px solid var(--tiger);border-radius:10px;padding:18px 22px;font-size:.85rem;margin-top:24px}
 
@@ -95,6 +102,12 @@
   </section>
 
   <section>
+    <h2>Signups by onboarding week</h2>
+    <div class="note" id="batchNote"></div>
+    <div class="batch-chart" id="batchChart"></div>
+  </section>
+
+  <section>
     <h2>Where signups are coming from</h2>
     <div class="note">Orange bars are actual signups logged since July 1. Green zones are each channel's target range from the plan.</div>
     <div class="channels" id="channels"></div>
@@ -119,6 +132,19 @@ const GOAL = 1600;
 const BASELINE = 213;             // verified July 1, 2026
 const BASELINE_DATE = new Date(2026, 6, 1);
 const DEADLINE = new Date(2026, 11, 31);
+
+// Manually tallied from Maggie's master confirmed-customer list (color-coded onboarding batches).
+// Updated by Brent's weekly notification — last updated 2026-07-18, total 238 (CCC 1–238).
+const MASTER = {
+  asOf: "Jul 18",
+  batches: [
+    {week:"Apr 15", n:51, launch:true}, {week:"Apr 22", n:11}, {week:"Apr 29", n:31},
+    {week:"May 6",  n:22}, {week:"May 13", n:17}, {week:"May 20", n:26}, {week:"May 27", n:9},
+    {week:"Jun 3",  n:13}, {week:"Jun 11", n:11}, {week:"Jun 17", n:18}, {week:"Jun 24", n:5},
+    {week:"Jul 1",  n:8},  {week:"Jul 8",  n:9},  {week:"Jul 15", n:7}
+  ]
+};
+const MASTER_TOTAL = MASTER.batches.reduce((s,b)=>s+b.n,0);
 
 // Target ranges from the Source Targets tab (July 7 team brief)
 const TARGETS = {
@@ -178,6 +204,9 @@ function render(rows){
   if(!foundTotal && weekRows.length){
     current = BASELINE + weekRows.reduce((s,r)=>s+(num(r[iNet])||0),0);
   }
+  // Master confirmed-customer list is authoritative when it's ahead of the Weekly Log
+  const usingMaster = MASTER_TOTAL >= current;
+  if(usingMaster) current = MASTER_TOTAL;
 
   const today = new Date();
   const daysLeft = daysBetween(today, DEADLINE);
@@ -185,9 +214,15 @@ function render(rows){
   const stillNeeded = Math.max(0, GOAL-current);
   const neededPerWeek = stillNeeded/weeksLeft;
 
-  // Pace: average net adds across logged weeks
+  // Pace: average net adds across logged weeks; fall back to last 4 onboarding batches from the master list
   const netAdds = weekRows.map(r=>num(r[iNet])).filter(v=>v!==null);
-  const avgPace = netAdds.length ? netAdds.reduce((a,b)=>a+b,0)/netAdds.length : null;
+  let avgPace = netAdds.length ? netAdds.reduce((a,b)=>a+b,0)/netAdds.length : null;
+  let paceSource = "avg net adds/week";
+  if(avgPace===null && MASTER.batches.length>=4){
+    const last4 = MASTER.batches.slice(-4);
+    avgPace = last4.reduce((s,b)=>s+b.n,0)/4;
+    paceSource = "avg of last 4 onboarding batches";
+  }
   const lastWait = (()=>{ let w=null; for(const r of logged){const v=num(r[iWait]); if(v!==null)w=v;} return w; })();
 
   // Status badge
@@ -199,17 +234,28 @@ function render(rows){
 
   // Cards
   document.getElementById("cards").innerHTML = `
-    <div class="card"><div class="label">Members now</div><div class="big">${current.toLocaleString()}</div><div class="sub">of ${GOAL.toLocaleString()} goal</div></div>
+    <div class="card"><div class="label">Members now</div><div class="big">${current.toLocaleString()}</div><div class="sub">${usingMaster?`master list, ${MASTER.asOf}`:`of ${GOAL.toLocaleString()} goal`}</div></div>
     <div class="card hot"><div class="label">Still needed</div><div class="big">${stillNeeded===0?"🎉 0":stillNeeded.toLocaleString()}</div><div class="sub">${daysLeft} days left in 2026</div></div>
     <div class="card"><div class="label">Needed / week</div><div class="big">${neededPerWeek.toFixed(1)}</div><div class="sub">to hit Dec 31</div></div>
-    <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">avg net adds/week ${badge}</div></div>
+    <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">${paceSource} ${badge}</div></div>
     <div class="card"><div class="label">Waitlist</div><div class="big">${lastWait===null?"—":lastWait.toLocaleString()}</div><div class="sub">warm pool outside zones</div></div>`;
 
   // Progress bar
   const pct = Math.min(100, current/GOAL*100);
   const fill=document.getElementById("progressFill");
   fill.style.width=pct+"%"; fill.textContent=pct.toFixed(1)+"%";
-  document.getElementById("baselineMark").textContent = `Started at ${BASELINE} (Jul 1)`;
+  document.getElementById("baselineMark").textContent = `Launched Apr 15 with ${MASTER.batches[0].n} founding members`;
+
+  // Onboarding-week chart (from the master confirmed-customer list, updated manually)
+  const maxBatch = Math.max(...MASTER.batches.map(b=>b.n));
+  document.getElementById("batchNote").textContent =
+    `New members confirmed in each Wednesday onboarding batch since the Apr 15 launch — ${MASTER_TOTAL} total, from the master customer list (updated ${MASTER.asOf}).`;
+  document.getElementById("batchChart").innerHTML = MASTER.batches.map(b=>`
+    <div class="batch-col${b.launch?" launch":""}">
+      <div class="batch-count">${b.n}</div>
+      <div class="batch-bar" style="height:${Math.max(b.n/maxBatch*100,3)}%"></div>
+      <div class="batch-week">${esc(b.week)}</div>
+    </div>`).join("");
 
   // Channels
   const chDiv=document.getElementById("channels");
