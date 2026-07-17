@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>The Road to 1,600 — Curbside Compost Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@900&family=Catamaran:wght@800&family=Hepta+Slab:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --earthy:#0F3A23; --grass:#5B7048; --newgreen:#7E9366; --spearmint:#A6B88A;
+    --pale:#D1D7C3; --pulp:#F6F5EF; --tiger:#D16727; --citrus:#CF8729;
+    --gem:#4095AF; --deep:#13344A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--pulp);color:var(--earthy);font-family:'Hepta Slab',Georgia,serif;font-weight:300;line-height:1.5}
+  h1,h2{font-family:'Raleway',sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:.02em}
+  h3{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:.8rem}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 24px 64px}
+
+  header{background:var(--earthy);color:var(--pulp);padding:40px 0 96px}
+  header .wrap{padding-bottom:0}
+  .kicker{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.14em;font-size:.75rem;color:var(--spearmint);margin-bottom:8px}
+  header h1{font-size:clamp(1.8rem,5vw,3rem)}
+  header h1 .accent{color:var(--spearmint)}
+  .updated{font-size:.75rem;color:var(--pale);margin-top:10px}
+  .updated .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--spearmint);margin-right:6px;vertical-align:1px}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-top:-64px}
+  .card{background:#fff;border-radius:14px;padding:20px 22px;box-shadow:0 6px 18px rgba(15,58,35,.10)}
+  .card .label{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:.66rem;color:var(--grass)}
+  .card .big{font-family:'Raleway',sans-serif;font-weight:900;font-size:2.2rem;line-height:1.15;margin-top:4px}
+  .card .sub{font-size:.72rem;color:var(--grass);margin-top:4px}
+  .card.hot .big{color:var(--tiger)}
+
+  .badge{display:inline-block;font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:.62rem;color:var(--pulp);border-radius:20px;padding:3px 10px;margin-top:8px}
+  .badge.ok{background:var(--grass)} .badge.warn{background:var(--citrus)} .badge.bad{background:var(--tiger)} .badge.wait{background:var(--gem)}
+
+  section{margin-top:44px}
+  section>h2{font-size:1.15rem;margin-bottom:4px}
+  section>.note{font-size:.78rem;color:var(--grass);margin-bottom:16px}
+
+  .progress-shell{background:var(--pale);border-radius:20px;height:34px;position:relative;overflow:hidden}
+  .progress-fill{background:linear-gradient(90deg,var(--grass),var(--earthy));height:100%;border-radius:20px;min-width:56px;display:flex;align-items:center;justify-content:flex-end;padding-right:12px;color:var(--pulp);font-family:'Catamaran',sans-serif;font-weight:800;font-size:.78rem;transition:width .9s ease}
+  .progress-marks{display:flex;justify-content:space-between;font-size:.7rem;color:var(--grass);margin-top:6px}
+  .nov-mark{position:absolute;top:0;bottom:0;width:2px;background:var(--tiger)}
+  .nov-label{font-size:.7rem;color:var(--tiger);margin-top:2px}
+
+  .channels{display:flex;flex-direction:column;gap:14px}
+  .ch-row{display:grid;grid-template-columns:190px 1fr 120px;gap:14px;align-items:center}
+  .ch-name{font-family:'Catamaran',sans-serif;font-weight:800;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}
+  .ch-track{background:#fff;border:1px solid var(--pale);border-radius:12px;height:22px;position:relative;overflow:hidden}
+  .ch-target{position:absolute;top:0;bottom:0;background:rgba(166,184,138,.35)}
+  .ch-fill{position:absolute;top:3px;bottom:3px;left:3px;background:var(--tiger);border-radius:9px;min-width:6px;transition:width .9s ease}
+  .ch-nums{font-size:.74rem;color:var(--grass);text-align:right}
+  .ch-nums b{color:var(--earthy);font-weight:600}
+
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 6px 18px rgba(15,58,35,.08);font-size:.78rem}
+  thead th{background:var(--earthy);color:var(--pulp);font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:.62rem;padding:10px 10px;text-align:right;white-space:nowrap}
+  thead th:first-child{text-align:left}
+  tbody td{padding:8px 10px;text-align:right;border-top:1px solid var(--pale)}
+  tbody td:first-child{text-align:left;font-weight:600;white-space:nowrap}
+  tbody tr.baseline td{color:var(--grass);font-style:italic}
+  tbody tr:hover{background:#fdf9f2}
+  .table-scroll{overflow-x:auto;border-radius:14px}
+
+  .empty-state{background:#fff;border:2px dashed var(--pale);border-radius:14px;padding:28px;text-align:center;color:var(--grass);font-size:.85rem}
+  .error-state{background:#fff;border-left:6px solid var(--tiger);border-radius:10px;padding:18px 22px;font-size:.85rem;margin-top:24px}
+
+  footer{margin-top:56px;font-size:.7rem;color:var(--grass);border-top:1px solid var(--pale);padding-top:14px}
+  @media(max-width:640px){.ch-row{grid-template-columns:1fr;gap:4px}.ch-nums{text-align:left}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">Curbside Compost Club</div>
+    <h1>The Road to <span class="accent">1,600</span></h1>
+    <div class="updated"><span class="dot"></span><span id="updated">Loading live numbers from the tracker…</span></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="cards" id="cards"></div>
+
+  <section>
+    <h2>Progress to goal</h2>
+    <div class="note">1,600 total members by Dec 31, 2026 · the orange line is the real deadline — 1,544 by Nov 30, before December coasts.</div>
+    <div class="progress-shell" id="progressShell">
+      <div class="progress-fill" id="progressFill" style="width:0%">0%</div>
+    </div>
+    <div class="progress-marks"><span id="baselineMark"></span><span>1,600</span></div>
+    <div class="nov-label" id="novLabel"></div>
+  </section>
+
+  <section>
+    <h2>Where signups are coming from</h2>
+    <div class="note">Orange bars are actual signups logged since July 1. Green zones are each channel's target range from the plan.</div>
+    <div class="channels" id="channels"></div>
+  </section>
+
+  <section>
+    <h2>Week by week</h2>
+    <div class="note" id="tableNote">Every logged week from the tracker. Weeks not yet logged don't appear.</div>
+    <div id="tableWrap"></div>
+  </section>
+
+  <footer>
+    Pulls live from the Road_to_1600 tracker each time this page opens (published data can take a few minutes to refresh after an edit).
+    Baseline: 213 verified members on July 1, 2026. Questions → Brent.
+  </footer>
+</div>
+
+<script>
+/* ====== CONFIG ====== */
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRl4kwEpiLnOkxVcwaPJqoXO9beOaH_P9wb8uSkzPJCNpFkgH61I_Ml_Kg-y44BKKT3lfO3dtn3-065/pub?gid=1242657682&single=true&output=csv"; // Weekly Log tab, published to web as CSV
+const GOAL = 1600;
+const BASELINE = 213;             // verified July 1, 2026
+const BASELINE_DATE = new Date(2026, 6, 1);
+const DEADLINE = new Date(2026, 11, 31);
+const NOV30 = new Date(2026, 10, 30);
+const NOV30_TARGET = 1544;
+
+// Target ranges from the Source Targets tab (July 7 team brief)
+const TARGETS = {
+  "Referral":        {lo:350, hi:450, label:"Referrals (free month)"},
+  "Qualified email": {lo:30,  hi:50,  label:"Qualified leads re-engaged"},
+  "Waitlist email":  {lo:40,  hi:60,  label:"Waitlist conversions"},
+  "Drop-off email":  {lo:75,  hi:150, label:"Drop-off switchers"},
+  "Organic / WOM":   {lo:150, hi:200, label:"Organic / word of mouth"},
+  "Paid ads":        {lo:500, hi:700, label:"Paid ads (Meta + Google)", combine:["Meta ads","Google ads"]},
+  "Speaking":        {lo:null,hi:null,label:"Public speaking"},
+  "Press / podcast": {lo:null,hi:null,label:"Earned media"},
+  "Other":           {lo:null,hi:null,label:"Other"}
+};
+const NON_CHANNEL = ["week ending","total customers","net adds","ad spend ($)","paid cac ($)","waitlist size"];
+
+/* ====== CSV PARSER (handles quoted fields) ====== */
+function parseCSV(text){
+  const rows=[]; let row=[], cell="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(cell); cell=""; }
+    else if(c==='\n'){ row.push(cell); rows.push(row); row=[]; cell=""; }
+    else if(c!=='\r') cell+=c;
+  }
+  if(cell!==""||row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+const num = v => { const n=parseFloat(String(v).replace(/[$,%\s]/g,"")); return isNaN(n)?null:n; };
+
+/* ====== RENDER ====== */
+function fmtDate(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
+function daysBetween(a,b){ return Math.max(0, Math.round((b-a)/86400000)); }
+
+function render(rows){
+  const header = rows[0].map(h=>h.trim());
+  const data = rows.slice(1).filter(r=>r.some(c=>c.trim()!==""));
+  const idx = name => header.findIndex(h=>h.toLowerCase()===name.toLowerCase());
+  const iWeek=idx("Week ending"), iTotal=idx("Total customers"), iNet=idx("Net adds"), iWait=idx("Waitlist size");
+
+  // Logged weeks = rows with a Total customers or Net adds value (skip the baseline row for pace)
+  const logged = data.filter(r => num(r[iTotal])!==null || num(r[iNet])!==null);
+  const baselineRow = logged.find(r => /baseline/i.test(r[iWeek]||""));
+  const weekRows = logged.filter(r => !/baseline/i.test(r[iWeek]||""));
+
+  // Current total: last row with a total; else baseline + summed net adds; else baseline
+  let current = BASELINE;
+  for(const r of logged){ const t=num(r[iTotal]); if(t!==null) current=t; }
+  if(current===BASELINE && weekRows.length){
+    const addSum = weekRows.reduce((s,r)=>s+(num(r[iNet])||0),0);
+    current = BASELINE + addSum;
+  }
+
+  const today = new Date();
+  const daysLeft = daysBetween(today, DEADLINE);
+  const weeksLeft = Math.max(daysLeft/7, 0.01);
+  const neededPerWeek = (GOAL-current)/weeksLeft;
+
+  // Pace: average net adds across logged weeks
+  const netAdds = weekRows.map(r=>num(r[iNet])).filter(v=>v!==null);
+  const avgPace = netAdds.length ? netAdds.reduce((a,b)=>a+b,0)/netAdds.length : null;
+  const lastWait = (()=>{ let w=null; for(const r of logged){const v=num(r[iWait]); if(v!==null)w=v;} return w; })();
+
+  // Status badge
+  let badge;
+  if(avgPace===null) badge = `<span class="badge wait">No weeks logged yet</span>`;
+  else if(avgPace >= neededPerWeek) badge = `<span class="badge ok">On pace</span>`;
+  else if(avgPace >= neededPerWeek*0.75) badge = `<span class="badge warn">Close — push the free channels</span>`;
+  else badge = `<span class="badge bad">Behind pace</span>`;
+
+  // Cards
+  document.getElementById("cards").innerHTML = `
+    <div class="card"><div class="label">Members now</div><div class="big">${current.toLocaleString()}</div><div class="sub">of ${GOAL.toLocaleString()} goal</div></div>
+    <div class="card hot"><div class="label">Still needed</div><div class="big">${(GOAL-current).toLocaleString()}</div><div class="sub">${daysLeft} days left in 2026</div></div>
+    <div class="card"><div class="label">Needed / week</div><div class="big">${neededPerWeek.toFixed(1)}</div><div class="sub">to hit Dec 31</div></div>
+    <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">avg net adds/week ${badge}</div></div>
+    <div class="card"><div class="label">Waitlist</div><div class="big">${lastWait===null?"—":lastWait.toLocaleString()}</div><div class="sub">warm pool outside zones</div></div>`;
+
+  // Progress bar
+  const pct = Math.min(100, current/GOAL*100);
+  const fill=document.getElementById("progressFill");
+  fill.style.width=pct+"%"; fill.textContent=pct.toFixed(1)+"%";
+  document.getElementById("baselineMark").textContent = `Started at ${BASELINE} (Jul 1)`;
+  const novPct = NOV30_TARGET/GOAL*100;
+  const shell=document.getElementById("progressShell");
+  const mark=document.createElement("div"); mark.className="nov-mark"; mark.style.left=novPct+"%"; shell.appendChild(mark);
+  document.getElementById("novLabel").textContent = `▲ Real deadline: ${NOV30_TARGET.toLocaleString()} by Nov 30 (${daysBetween(today,NOV30)} days away)`;
+
+  // Channels
+  const chDiv=document.getElementById("channels");
+  const sums={};
+  header.forEach((h,i)=>{
+    if(NON_CHANNEL.includes(h.toLowerCase())) return;
+    sums[h]=weekRows.reduce((s,r)=>s+(num(r[i])||0),0);
+  });
+  const rowsHtml=[];
+  const consumed=new Set();
+  for(const [key,t] of Object.entries(TARGETS)){
+    let actual=0, present=false;
+    if(t.combine){ t.combine.forEach(c=>{ if(c in sums){actual+=sums[c]; consumed.add(c); present=true;} }); }
+    else if(key in sums){ actual=sums[key]; consumed.add(key); present=true; }
+    if(!present) continue;
+    rowsHtml.push(channelRow(t.label, actual, t.lo, t.hi));
+  }
+  // Any new columns added to the sheet later show up automatically
+  for(const [h,v] of Object.entries(sums)){ if(!consumed.has(h)) rowsHtml.push(channelRow(h, v, null, null)); }
+  const maxScale = Math.max(700, ...Object.values(sums)) * 1.05;
+  chDiv.innerHTML = rowsHtml.map(r=>r(maxScale)).join("") || `<div class="empty-state">Channel numbers appear here as weeks get logged.</div>`;
+
+  // Weekly table
+  const tw=document.getElementById("tableWrap");
+  if(!weekRows.length && !baselineRow){
+    tw.innerHTML=`<div class="empty-state">No weeks logged yet — the first row lands after the week ending July 19.</div>`;
+  } else {
+    const showRows=(baselineRow?[baselineRow]:[]).concat(weekRows);
+    tw.innerHTML=`<div class="table-scroll"><table>
+      <thead><tr>${header.map(h=>`<th>${h}</th>`).join("")}</tr></thead>
+      <tbody>${showRows.map(r=>`<tr${/baseline/i.test(r[iWeek]||"")?' class="baseline"':''}>${header.map((h,i)=>`<td>${(r[i]??"").trim()||"·"}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table></div>`;
+  }
+
+  document.getElementById("updated").textContent =
+    `Live from the tracker · loaded ${today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}, ${today.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`;
+}
+
+function channelRow(label, actual, lo, hi){
+  return (scale)=>{
+    const fillPct=Math.min(100, actual/scale*100);
+    const tLeft = lo!==null? lo/scale*100 : 0;
+    const tW = lo!==null? Math.min(100,(hi-lo)/scale*100+ (hi-lo===0?1:0)) : 0;
+    const targetHtml = lo!==null? `<div class="ch-target" style="left:${tLeft}%;width:${Math.max(tW, .8)}%"></div>`:"";
+    const numsHtml = lo!==null? `<b>${actual.toLocaleString()}</b> / ${lo}–${hi}` : `<b>${actual.toLocaleString()}</b> / target TBD`;
+    return `<div class="ch-row"><div class="ch-name">${label}</div>
+      <div class="ch-track">${targetHtml}<div class="ch-fill" style="width:${Math.max(fillPct,0.8)}%"></div></div>
+      <div class="ch-nums">${numsHtml}</div></div>`;
+  };
+}
+
+function showError(msg){
+  document.getElementById("updated").textContent="Couldn't load live data";
+  document.getElementById("cards").insertAdjacentHTML("beforebegin",
+    `<div class="error-state"><b>Couldn't reach the tracker.</b> ${msg} — try a refresh, or check that the Weekly Log tab is still published to the web.</div>`);
+}
+
+fetch(SHEET_CSV_URL,{cache:"no-store"})
+  .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
+  .then(t=>{ const rows=parseCSV(t); if(!rows.length||rows[0].length<3) throw new Error("Unexpected sheet format"); render(rows); })
+  .catch(e=>showError(e.message));
+</script>
+</body>
+</html>
