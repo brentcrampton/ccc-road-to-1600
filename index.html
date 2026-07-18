@@ -85,7 +85,7 @@
   .pool .what{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:.72rem}
   .pool .how{font-size:.76rem;color:var(--grass);margin-top:3px}
   @media(max-width:640px){.pools{grid-template-columns:1fr}}
-  .tellus{display:grid;grid-template-columns:1fr 1fr 2fr;gap:16px}
+  .tellus{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
   .tell{background:#fff;border-radius:14px;padding:22px 24px;box-shadow:0 6px 18px rgba(15,58,35,.08)}
   .tell .num{font-family:'Raleway',sans-serif;font-weight:900;font-size:2.2rem}
   .tell .what{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:.7rem;color:var(--grass);margin-top:2px}
@@ -155,6 +155,12 @@
   </section>
 
   <section>
+    <h2>Where the demand lives</h2>
+    <div class="note">By zip code: members (Jotform, since May 5) vs. website-form interest (raw submissions, live sheet counts as of Jul 18). Sorted by waitlist — big waitlist with few members marks the next zones to open: 68164, 68144, 68154, 68135, 68137. Another ~90 waitlist entries are outside the metro or one-offs.</div>
+    <div class="table-scroll" id="zipTable"></div>
+  </section>
+
+  <section>
     <h2>Signups by onboarding week</h2>
     <div class="note" id="batchNote"></div>
     <div class="batch-chart" id="batchChart"></div>
@@ -212,8 +218,19 @@ const JOTFORM_INSIGHTS = {
   asOf: "Jul 15", n: 121, answered: 34,
   referred: 38, dropoffSwitchers: 38,
   channelSeed: {"Referral": 38, "Drop-off email": 38, "Organic / WOM": 19, "Meta ads": 3, "Speaking": 2, "Press / podcast": 2, "Other": 4},
-  carts: [{"label":"35-gallon","n":101},{"label":"65-gallon","n":12},{"label":"95-gallon","n":8}]
+  carts: [{"label":"35-gallon","n":101},{"label":"65-gallon","n":12},{"label":"95-gallon","n":8}],
+  revenue: { blend: 26.16, prices: {"35-gallon":25,"65-gallon":30,"95-gallon":35} }
 };
+
+// Zip demand: members = Jotform since May 5; qualified/waitlist = intake-form submissions (raw), Jul 18
+const ZIPS = [
+ {zip:"68164",m:5,q:8,w:24},{zip:"68144",m:4,q:5,w:23},{zip:"68154",m:2,q:0,w:20},
+ {zip:"68114",m:12,q:37,w:15},{zip:"68135",m:0,q:0,w:12},{zip:"68137",m:0,q:0,w:11},
+ {zip:"68124",m:24,q:35,w:11},{zip:"68112",m:0,q:2,w:10},{zip:"68152",m:1,q:0,w:10},
+ {zip:"68116",m:0,q:0,w:9},{zip:"68127",m:0,q:0,w:9},{zip:"68130",m:1,q:0,w:9},
+ {zip:"68132",m:26,q:41,w:0},{zip:"68104",m:17,q:57,w:3},{zip:"68106",m:10,q:27,w:0},
+ {zip:"68105",m:6,q:26,w:0},{zip:"68134",m:6,q:26,w:7},{zip:"68131",m:5,q:16,w:0}
+];
 
 // Target ranges from the Source Targets tab (July 7 team brief)
 const TARGETS = {
@@ -344,8 +361,17 @@ function render(rows, live){
     <div class="tell"><div class="num">${Math.round(JI.dropoffSwitchers/JI.n*100)}%</div><div class="what">switched from Drop-off Compost Club</div></div>
     <div class="tell"><div class="what" style="margin-top:0">Cart sizes chosen</div>
       <div class="cartbar">${JI.carts.map((c,i)=>`<div style="width:${(c.n/cartsTotal*100).toFixed(1)}%;background:${cartColors[i%3]}">${Math.round(c.n/cartsTotal*100)}%</div>`).join("")}</div>
-      <div class="cartlegend">${JI.carts.map(c=>`${c.label}: ${c.n}`).join(" · ")} — buy roughly 8 of every 10 carts in 35-gallon.</div>
-    </div>`;
+      <div class="cartlegend">${JI.carts.map(c=>`${c.label}: ${c.n}`).join(" · ")} — buy roughly 8 of every 10 carts in 35-gallon. To reach 1,600 at today's mix: ≈1,140 more 35-gal, ≈135 65-gal, ≈90 95-gal carts.</div>
+    </div>
+    <div class="tell"><div class="num">$26</div><div class="what">avg revenue per member/month, from cart mix</div></div>
+    <div class="tell"><div class="num">$${Math.round(current*JI.revenue.blend).toLocaleString()}</div><div class="what">monthly recurring revenue today</div></div>
+    <div class="tell"><div class="num">$${Math.round(1600*JI.revenue.blend).toLocaleString()}</div><div class="what">MRR at 1,600 members (≈$502K/yr)</div></div>`;
+
+  // Where the demand lives — zip table
+  document.getElementById("zipTable").innerHTML = `<table>
+    <thead><tr><th>Zip</th><th>Members</th><th>Qualified leads</th><th>Waitlist</th></tr></thead>
+    <tbody>${ZIPS.map(z=>`<tr${z.w>=15?' style="background:#fdf3ec"':''}><td>${esc(z.zip)}</td><td>${z.m||"·"}</td><td>${z.q||"·"}</td><td>${z.w||"·"}</td></tr>`).join("")}</tbody>
+  </table>`;
 
   // One timeline: onboarding batches from the master list, then logged weeks from the tracker (blue)
   const timeline = MASTER.batches.map(b=>({...b}));
