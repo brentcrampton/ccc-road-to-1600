@@ -168,15 +168,10 @@
 
   <section>
     <h2>Where signups are coming from</h2>
-    <div class="note">Actuals from Jotform signups through Jul 15 (121 members) plus tracker-logged weeks. Referrals and drop-off switchers were asked of everyone; the "where did you hear about us" question was answered by 34 of 121 (it was optional at first), so the other bars undercount. Channels can overlap.</div>
+    <div class="note">Actuals from Jotform signups through Jul 15 (121 members), refreshed with each weekly export. Referrals and drop-off switchers were asked of everyone; the "where did you hear about us" question was answered by 34 of 121 (it was optional at first), so the other bars undercount. A member can credit more than one channel — these bars measure each lever's contribution, not a headcount.</div>
     <div class="channels" id="channels"></div>
   </section>
 
-  <section>
-    <h2>The marketing log: what drove each week</h2>
-    <div class="note" id="tableNote">The chart above counts who joined; this table explains why — signups by channel plus ad spend, logged weekly by the team. Weeks not yet logged don't appear.</div>
-    <div id="tableWrap"></div>
-  </section>
 
   <footer>
     Pulls live from the Road_to_1600 tracker each time this page opens (published data can take a few minutes to refresh after an edit).
@@ -387,13 +382,10 @@ function render(rows, live){
       <div class="batch-week">${esc(b.week)}</div>
     </div>`).join("");
 
-  // Channels
+  // Channels — attribution comes solely from the weekly Jotform export (the tracker's
+  // Weekly Log channel columns are no longer summed in, to avoid double counting)
   const chDiv=document.getElementById("channels");
   const sums={};
-  header.forEach((h,i)=>{
-    if(NON_CHANNEL.includes(h.toLowerCase())) return;
-    sums[h]=weekRows.reduce((s,r)=>s+(num(r[i])||0),0);
-  });
   for (const [k,v] of Object.entries(JOTFORM_INSIGHTS.channelSeed)) sums[k]=(sums[k]||0)+v;
   const rowsHtml=[];
   const consumed=new Set();
@@ -407,19 +399,7 @@ function render(rows, live){
   // Any new columns added to the sheet later show up automatically
   for(const [h,v] of Object.entries(sums)){ if(!consumed.has(h)) rowsHtml.push(channelRow(h, v, null, null)); }
   const maxScale = Math.max(700, ...Object.values(sums)) * 1.05;
-  chDiv.innerHTML = rowsHtml.map(r=>r(maxScale)).join("") || `<div class="empty-state">Channel numbers appear here as weeks get logged.</div>`;
-
-  // Weekly table
-  const tw=document.getElementById("tableWrap");
-  if(!weekRows.length && !baselineRow){
-    tw.innerHTML=`<div class="empty-state">No weeks logged yet — the first row lands after the week ending July 19.</div>`;
-  } else {
-    const showRows=(baselineRow?[baselineRow]:[]).concat(weekRows);
-    tw.innerHTML=`<div class="table-scroll"><table>
-      <thead><tr>${header.map(h=>`<th>${esc(h)}</th>`).join("")}</tr></thead>
-      <tbody>${showRows.map(r=>`<tr${/baseline/i.test(r[iWeek]||"")?' class="baseline"':''}>${header.map((h,i)=>`<td>${esc((r[i]??"").trim())||"·"}</td>`).join("")}</tr>`).join("")}</tbody>
-    </table></div>`;
-  }
+  chDiv.innerHTML = rowsHtml.map(r=>r(maxScale)).join("") || `<div class="empty-state">Channel numbers appear with the next Jotform export.</div>`;
 
   document.getElementById("updated").textContent =
     `Live from the tracker · loaded ${today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}, ${today.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`;
