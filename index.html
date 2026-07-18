@@ -420,7 +420,7 @@ function render(rows, live){
     // Not enough ad-credited signups yet — show a clear "collecting" state instead of an alarming CAC off a tiny denominator
     cacDiv.innerHTML = `
       <div class="tell"><div class="num">$${Math.round(adSpend).toLocaleString()}</div><div class="what">ad spend to date (Meta + Google)</div></div>
-      <div class="tell"><div class="num">${adSignups}</div><div class="what">ad-credited signups so far · need ${CAC_READY_AT}+ for a reliable read</div></div>
+      <div class="tell"><div class="num">${adSignups}</div><div class="what">ad-credited signups so far · need ${CAC_READY_AT}+ for a reliable read <span class="badge wait">Collecting data</span></div></div>
       <div class="tell"><div class="num" style="color:var(--gem);font-size:1.5rem">Still collecting</div><div class="what">cost per signup will appear once enough signups are ad-credited <span class="badge wait">Collecting data</span></div></div>`;
   } else {
     const cac = adSpend/adSignups;
