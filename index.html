@@ -217,7 +217,7 @@ const POOLS = { asOf:"Jul 18", qualified:242, waitlist:300, both:60 };
 const JOTFORM_INSIGHTS = {
   asOf: "Jul 15", n: 121, answered: 34,
   referred: 38, dropoffSwitchers: 38,
-  channelSeed: {"Referral": 38, "Drop-off email": 38, "Organic / WOM": 19, "Meta ads": 3, "Speaking": 2, "Press / podcast": 2, "Other": 4},
+  channelSeed: {"Referral": 38, "Drop-off email": 38, "Organic / WOM": 16, "Meta ads": 2, "Speaking": 2, "Press / podcast": 1, "Other": 6},
   carts: [{"label":"35-gallon","n":101},{"label":"65-gallon","n":12},{"label":"95-gallon","n":8}]
 };
 
@@ -360,7 +360,7 @@ function render(rows, live){
     <div class="tell"><div class="num">${Math.round(JI.dropoffSwitchers/JI.n*100)}%</div><div class="what">switched from Drop-off Compost Club</div></div>
     <div class="tell"><div class="what" style="margin-top:0">Cart sizes chosen</div>
       <div class="cartbar">${JI.carts.map((c,i)=>`<div style="width:${(c.n/cartsTotal*100).toFixed(1)}%;background:${cartColors[i%3]}">${Math.round(c.n/cartsTotal*100)}%</div>`).join("")}</div>
-      <div class="cartlegend">${JI.carts.map(c=>`${c.label}: ${c.n}`).join(" · ")} — buy roughly 8 of every 10 carts in 35-gallon. To reach 1,600 at today's mix: ≈1,140 more 35-gal, ≈135 65-gal, ≈90 95-gal carts.</div>
+      <div class="cartlegend">${JI.carts.map(c=>`${c.label}: ${c.n}`).join(" · ")}</div>
     </div>`;
 
   // Where the demand lives — zip table
