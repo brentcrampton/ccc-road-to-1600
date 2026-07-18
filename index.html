@@ -297,7 +297,7 @@ function render(rows, live){
   // Cards (below hero: warm leads + new intake)
   document.getElementById("cards2").innerHTML = `
     <div class="card"><div class="label">Warm leads</div><div class="big">${poolTotal.toLocaleString()}</div><div class="sub">unique people, qualified + waitlist, ${poolWhen}</div></div>
-    ${live && "new_leads_7d" in live ? `<div class="card"><div class="label">New intake leads, 7 days</div><div class="big">${live.new_leads_7d.toLocaleString()}</div><div class="sub">interest via the website form — not payments</div></div>` : ""}`;
+    ${live && "new_leads_7d" in live ? `<div class="card"><div class="label">New people, last 7 days</div><div class="big">${live.new_leads_7d.toLocaleString()}</div><div class="sub">first-time website form submissions — not payments</div></div>` : ""}`;
 
   // Progress bar
   const pct = Math.min(100, current/GOAL*100);
