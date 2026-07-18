@@ -85,6 +85,14 @@
   .pool .what{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:.72rem}
   .pool .how{font-size:.76rem;color:var(--grass);margin-top:3px}
   @media(max-width:640px){.pools{grid-template-columns:1fr}}
+  .tellus{display:grid;grid-template-columns:1fr 1fr 2fr;gap:16px}
+  .tell{background:#fff;border-radius:14px;padding:22px 24px;box-shadow:0 6px 18px rgba(15,58,35,.08)}
+  .tell .num{font-family:'Raleway',sans-serif;font-weight:900;font-size:2.2rem}
+  .tell .what{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:.7rem;color:var(--grass);margin-top:2px}
+  .cartbar{display:flex;height:30px;border-radius:10px;overflow:hidden;margin-top:10px}
+  .cartbar div{display:flex;align-items:center;justify-content:center;color:var(--pulp);font-family:'Catamaran',sans-serif;font-weight:800;font-size:.68rem;white-space:nowrap}
+  .cartlegend{font-size:.72rem;color:var(--grass);margin-top:6px}
+  @media(max-width:760px){.tellus{grid-template-columns:1fr}}
   .batch-col.logged .batch-bar{background:var(--gem)}
   .batch-chart{display:flex;align-items:flex-end;gap:6px;height:190px;background:#fff;border-radius:14px;padding:18px 18px 8px;box-shadow:0 6px 18px rgba(15,58,35,.08)}
   .batch-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
@@ -141,6 +149,12 @@
   </section>
 
   <section>
+    <h2>What signups tell us</h2>
+    <div class="note">From the Jotform signup form, all 121 members since May 5 (updated Jul 15). Guides referral promotion and cart purchasing.</div>
+    <div class="tellus" id="tellus"></div>
+  </section>
+
+  <section>
     <h2>Signups by onboarding week</h2>
     <div class="note" id="batchNote"></div>
     <div class="batch-chart" id="batchChart"></div>
@@ -148,7 +162,7 @@
 
   <section>
     <h2>Where signups are coming from</h2>
-    <div class="note">Orange bars are actual signups logged since July 1. Green zones are each channel's target range from the plan.</div>
+    <div class="note">Actuals from Jotform signups through Jul 15 (121 members) plus tracker-logged weeks. Referrals and drop-off switchers were asked of everyone; the "where did you hear about us" question was answered by 34 of 121 (it was optional at first), so the other bars undercount. Channels can overlap.</div>
     <div class="channels" id="channels"></div>
   </section>
 
@@ -192,6 +206,14 @@ const MASTER_TOTAL = MASTER.batches.reduce((s,b)=>s+b.n,0);
 // Unique emails only (raw rows contain duplicates); verified by email match that neither pool
 // contains anyone already on the confirmed-customer list. `both` = people on both lists.
 const POOLS = { asOf:"Jul 18", qualified:242, waitlist:300, both:60 };
+
+// From weekly Jotform signup exports (processed by ../jotform_tally.py — aggregates only, no PII)
+const JOTFORM_INSIGHTS = {
+  asOf: "Jul 15", n: 121, answered: 34,
+  referred: 38, dropoffSwitchers: 38,
+  channelSeed: {"Referral": 38, "Drop-off email": 38, "Organic / WOM": 19, "Meta ads": 3, "Speaking": 2, "Press / podcast": 2, "Other": 4},
+  carts: [{"label":"35-gallon","n":101},{"label":"65-gallon","n":12},{"label":"95-gallon","n":8}]
+};
 
 // Target ranges from the Source Targets tab (July 7 team brief)
 const TARGETS = {
@@ -314,6 +336,17 @@ function render(rows, live){
     <div class="pool wait"><div class="num">${pw.toLocaleString()}</div>
       <div><div class="what">Waitlist</div><div class="how">Outside current service area, waiting for their neighborhood to open. Job: zone-launch countdowns.</div></div></div>`;
 
+  // What signups tell us
+  const JI=JOTFORM_INSIGHTS, cartsTotal=JI.carts.reduce((s,c)=>s+c.n,0);
+  const cartColors=["var(--earthy)","var(--grass)","var(--gem)"];
+  document.getElementById("tellus").innerHTML=`
+    <div class="tell"><div class="num">${Math.round(JI.referred/JI.n*100)}%</div><div class="what">named a referrer when signing up</div></div>
+    <div class="tell"><div class="num">${Math.round(JI.dropoffSwitchers/JI.n*100)}%</div><div class="what">switched from Drop-off Compost Club</div></div>
+    <div class="tell"><div class="what" style="margin-top:0">Cart sizes chosen</div>
+      <div class="cartbar">${JI.carts.map((c,i)=>`<div style="width:${(c.n/cartsTotal*100).toFixed(1)}%;background:${cartColors[i%3]}">${Math.round(c.n/cartsTotal*100)}%</div>`).join("")}</div>
+      <div class="cartlegend">${JI.carts.map(c=>`${c.label}: ${c.n}`).join(" · ")} — buy roughly 8 of every 10 carts in 35-gallon.</div>
+    </div>`;
+
   // One timeline: onboarding batches from the master list, then logged weeks from the tracker (blue)
   const timeline = MASTER.batches.map(b=>({...b}));
   const lastBatchDate = new Date("2026-07-15");
@@ -339,6 +372,7 @@ function render(rows, live){
     if(NON_CHANNEL.includes(h.toLowerCase())) return;
     sums[h]=weekRows.reduce((s,r)=>s+(num(r[i])||0),0);
   });
+  for (const [k,v] of Object.entries(JOTFORM_INSIGHTS.channelSeed)) sums[k]=(sums[k]||0)+v;
   const rowsHtml=[];
   const consumed=new Set();
   for(const [key,t] of Object.entries(TARGETS)){
