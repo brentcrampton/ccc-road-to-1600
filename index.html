@@ -142,7 +142,8 @@
 <script>
 /* ====== CONFIG ====== */
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRl4kwEpiLnOkxVcwaPJqoXO9beOaH_P9wb8uSkzPJCNpFkgH61I_Ml_Kg-y44BKKT3lfO3dtn3-065/pub?gid=1242657682&single=true&output=csv"; // Weekly Log tab, published to web as CSV
-// "Live counts" tab of the Jotform-fed signups sheet — aggregate numbers only, no personal data
+// "Live counts" tab of the intake sheet (fed by the Vercel intake widget on hillside.solutions/compostclub/curbside,
+// NOT by Jotform — Jotform signups only reach the master list via Maggie's weekly update). Aggregate numbers only, no personal data.
 const LIVE_COUNTS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ7nHubVwjBcd2AFXjIvGVCI78Rfi1tiBu6X2hh8V2yKyTmfpESBLyTUxEz6SzbN91vFPHmhjl8w4p8/pub?gid=952458942&single=true&output=csv";
 const GOAL = 1600;
 const BASELINE = 213;             // verified July 1, 2026
@@ -251,7 +252,7 @@ function render(rows, live){
   const pw = live? live.waitlist_unique : POOLS.waitlist;
   const pb = live? (live.both_lists||0) : POOLS.both;
   const poolTotal = pq+pw-pb;
-  const poolWhen = live? "live from the signup feed" : `as of ${POOLS.asOf}`;
+  const poolWhen = live? "live from the website intake form" : `as of ${POOLS.asOf}`;
 
   // Status badge
   let badge;
@@ -267,7 +268,7 @@ function render(rows, live){
     <div class="card"><div class="label">Needed / week</div><div class="big">${neededPerWeek.toFixed(1)}</div><div class="sub">to hit Dec 31</div></div>
     <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">${paceSource} ${badge}</div></div>
     <div class="card"><div class="label">Warm leads</div><div class="big">${poolTotal.toLocaleString()}</div><div class="sub">unique people, qualified + waitlist, ${poolWhen}</div></div>
-    ${live && "new_leads_7d" in live ? `<div class="card"><div class="label">New leads, last 7 days</div><div class="big">${live.new_leads_7d.toLocaleString()}</div><div class="sub">signed up via the form, not yet onboarded</div></div>` : ""}`;
+    ${live && "new_leads_7d" in live ? `<div class="card"><div class="label">New intake leads, 7 days</div><div class="big">${live.new_leads_7d.toLocaleString()}</div><div class="sub">interest via the website form — not payments</div></div>` : ""}`;
 
   // Progress bar
   const pct = Math.min(100, current/GOAL*100);
