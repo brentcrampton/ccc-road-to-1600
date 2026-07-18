@@ -176,7 +176,7 @@
 
   <section>
     <h2>Paid acquisition: cost per signup</h2>
-    <div class="note">Cumulative ad spend is entered by the team in the intake sheet's Live counts tab; signups credited to ads come from the signup form question. The plan's hard stop is $50 per paid signup. Ad-credited signups are undercounted before Jul 18, when the form question became required — so early CAC will read high and correct itself over time.</div>
+    <div class="note"><strong>Still collecting data</strong> — the signup form only started requiring the "where did you hear about us" question on Jul 18, so very few signups are ad-credited yet. Ad spend is exact, but cost-per-signup stays marked "collecting" until enough ad-credited signups come in to make it reliable; then it shows against the plan's $50 target. No conclusions off this section yet.</div>
     <div class="cac" id="cac"></div>
   </section>
 
@@ -412,18 +412,23 @@ function render(rows, live){
   // Paid acquisition / CAC — spend entered by the team in Live counts rows 10-11
   const adSpend = (live && (live.ad_spend_meta||0)+(live.ad_spend_google||0)) || 0;
   const adSignups = JOTFORM_INSIGHTS.channelSeed["Meta ads"] || 0;
+  const CAC_READY_AT = 25; // ad-credited signups needed before cost-per-signup is trustworthy
   const cacDiv = document.getElementById("cac");
   if(!adSpend){
     cacDiv.innerHTML = `<div class="empty-state" style="grid-column:1/-1">No ad spend entered yet — add cumulative Meta and Google spend to the Live counts tab (rows 10–11) and CAC appears here automatically.</div>`;
+  } else if(adSignups < CAC_READY_AT){
+    // Not enough ad-credited signups yet — show a clear "collecting" state instead of an alarming CAC off a tiny denominator
+    cacDiv.innerHTML = `
+      <div class="tell"><div class="num">$${Math.round(adSpend).toLocaleString()}</div><div class="what">ad spend to date (Meta + Google)</div></div>
+      <div class="tell"><div class="num">${adSignups}</div><div class="what">ad-credited signups so far · need ${CAC_READY_AT}+ for a reliable read</div></div>
+      <div class="tell"><div class="num" style="color:var(--gem);font-size:1.5rem">Still collecting</div><div class="what">cost per signup will appear once enough signups are ad-credited <span class="badge wait">Collecting data</span></div></div>`;
   } else {
-    const cac = adSignups>0 ? adSpend/adSignups : null;
-    const cacBadge = cac===null ? `<span class="badge wait">No ad-credited signups yet</span>`
-      : cac<=50 ? `<span class="badge ok">Under the $50 stop</span>`
-      : `<span class="badge bad">Over the $50 stop</span>`;
+    const cac = adSpend/adSignups;
+    const cacBadge = cac<=50 ? `<span class="badge ok">Under the $50 stop</span>` : `<span class="badge bad">Over the $50 stop</span>`;
     cacDiv.innerHTML = `
       <div class="tell"><div class="num">$${Math.round(adSpend).toLocaleString()}</div><div class="what">ad spend to date (Meta + Google)</div></div>
       <div class="tell"><div class="num">${adSignups}</div><div class="what">signups credited to ads</div></div>
-      <div class="tell"><div class="num">${cac===null?"—":"$"+Math.round(cac).toLocaleString()}</div><div class="what">current cost per signup ${cacBadge}</div></div>`;
+      <div class="tell"><div class="num">$${Math.round(cac).toLocaleString()}</div><div class="what">current cost per signup ${cacBadge}</div></div>`;
   }
 
   document.getElementById("updated").textContent =
