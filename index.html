@@ -268,6 +268,7 @@ function render(rows, live){
     <div class="card"><div class="label">Needed / week</div><div class="big">${neededPerWeek.toFixed(1)}</div><div class="sub">to hit Dec 31</div></div>
     <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">${paceSource} ${badge}</div></div>
     <div class="card"><div class="label">Warm leads</div><div class="big">${poolTotal.toLocaleString()}</div><div class="sub">unique people, qualified + waitlist, ${poolWhen}</div></div>
+    ${live && "jotform_week_wed" in live ? `<div class="card hot"><div class="label">Signed up this week</div><div class="big">${live.jotform_week_wed.toLocaleString()}</div><div class="sub">Jotform since Wed · last week: ${(live.jotform_prev_week??"—")}</div></div>` : ""}
     ${live && "new_leads_7d" in live ? `<div class="card"><div class="label">New intake leads, 7 days</div><div class="big">${live.new_leads_7d.toLocaleString()}</div><div class="sub">interest via the website form — not payments</div></div>` : ""}`;
 
   // Progress bar
