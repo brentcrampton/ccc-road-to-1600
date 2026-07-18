@@ -17,17 +17,30 @@
   body{background:var(--pulp);color:var(--earthy);font-family:'Hepta Slab',Georgia,serif;font-weight:300;line-height:1.5}
   h1,h2{font-family:'Raleway',sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:.02em}
   h3{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:.8rem}
-  .wrap{max-width:1060px;margin:0 auto;padding:0 24px 64px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 64px}
 
-  header{background:var(--earthy);color:var(--pulp);padding:40px 0 96px}
-  header .wrap{padding-bottom:0}
+  .hero{background:var(--earthy);color:var(--pulp);padding:40px 0 48px}
+  .hero .wrap{padding:0 24px}
+  .hero-top{padding-top:0}
+  .logo-row{display:flex;gap:16px;margin-bottom:24px}
+  .logo-circle{width:84px;height:84px;border-radius:50%;border:2px solid var(--pulp);background:transparent;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+  .logo-circle span{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:.5rem;color:var(--pulp);line-height:1.15;padding:6px}
+  .logo-circle img{width:100%;height:100%;border-radius:50%;object-fit:cover}
   .kicker{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.14em;font-size:.75rem;color:var(--spearmint);margin-bottom:8px}
-  header h1{font-size:clamp(1.8rem,5vw,3rem)}
-  header h1 .accent{color:var(--spearmint)}
+  .hero h1{font-size:clamp(1.8rem,5vw,3rem)}
+  .hero h1 .accent{color:var(--spearmint)}
   .updated{font-size:.75rem;color:var(--pale);margin-top:10px}
   .updated .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--spearmint);margin-right:6px;vertical-align:1px}
+  .subline{font-family:'Hepta Slab',Georgia,serif;font-weight:300;font-size:1.05rem;color:var(--pulp);max-width:46em;margin-top:16px;line-height:1.55}
+  .subline a{color:var(--spearmint);text-decoration:underline}
+  .hero-cards{margin-top:32px}
+  .hero-progress{margin-top:36px}
+  .hero-progress section{margin-top:0}
+  .hero-progress section>h2{color:var(--pulp)}
+  .hero-progress section>.note{color:var(--pale)}
 
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-top:-64px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px}
+  .cards2{margin-top:44px}
   .card{background:#fff;border-radius:14px;padding:20px 22px;box-shadow:0 6px 18px rgba(15,58,35,.10)}
   .card .label{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:.66rem;color:var(--grass)}
   .card .big{font-family:'Raleway',sans-serif;font-weight:900;font-size:2.2rem;line-height:1.15;margin-top:4px}
@@ -89,29 +102,41 @@
 </head>
 <body>
 
-<header>
-  <div class="wrap">
+<div class="hero">
+  <div class="wrap hero-top">
+    <!-- LOGO PLACEHOLDER: replace src when logos provided -->
+    <div class="logo-row">
+      <div class="logo-circle"><span>HILLSIDE SOLUTIONS</span></div>
+      <div class="logo-circle"><span>CURBSIDE COMPOST CLUB</span></div>
+    </div>
     <div class="kicker">Curbside Compost Club</div>
     <h1>The Road to <span class="accent">1,600</span></h1>
     <div class="updated"><span class="dot"></span><span id="updated">Loading live numbers from the tracker…</span></div>
+    <p class="subline">Help Omaha make history by having the fastest-growing residential composting program in the country (outside of a pandemic year) by getting to 1,600 signups by December 31st. See if we're in your area or join the waitlist at <a href="https://www.hillside.solutions/compostclub/curbside">www.hillside.solutions/curbside</a>.</p>
   </div>
-</header>
+
+  <div class="wrap hero-cards">
+    <div class="cards" id="cards"></div>
+  </div>
+
+  <div class="wrap hero-progress">
+    <section>
+      <h2>Progress to goal</h2>
+      <div class="note">1,600 total members by Dec 31, 2026.</div>
+      <div class="progress-shell" id="progressShell">
+        <div class="progress-fill" id="progressFill" style="width:0%">0%</div>
+      </div>
+      <div class="progress-marks"><span id="baselineMark"></span><span>1,600</span></div>
+    </section>
+  </div>
+</div>
 
 <div class="wrap">
-  <div class="cards" id="cards"></div>
-
-  <section>
-    <h2>Progress to goal</h2>
-    <div class="note">1,600 total members by Dec 31, 2026.</div>
-    <div class="progress-shell" id="progressShell">
-      <div class="progress-fill" id="progressFill" style="width:0%">0%</div>
-    </div>
-    <div class="progress-marks"><span id="baselineMark"></span><span>1,600</span></div>
-  </section>
+  <div class="cards cards2" id="cards2"></div>
 
   <section>
     <h2>The pools: who could join next</h2>
-    <div class="note">Everyone below wants in but isn't a member yet — checked by email against the confirmed-customer list, so nobody is double-counted. Updated <span id="poolsAsOf"></span>.</div>
+    <div class="note">Everyone below wants in but isn't a member yet — anyone who has since joined under the same email is automatically removed. A small number who joined under a different email (~12 households as of Jul 18) may still be counted here. Updated <span id="poolsAsOf"></span>.</div>
     <div class="pools" id="pools"></div>
   </section>
 
@@ -261,14 +286,17 @@ function render(rows, live){
   else if(avgPace >= neededPerWeek*0.75) badge = `<span class="badge warn">Close — push the free channels</span>`;
   else badge = `<span class="badge bad">Behind pace</span>`;
 
-  // Cards
+  // Cards (hero: 5 cards)
   document.getElementById("cards").innerHTML = `
-    <div class="card"><div class="label">Members now</div><div class="big">${current.toLocaleString()}</div><div class="sub">${usingMaster?`master list, ${MASTER.asOf}`:`of ${GOAL.toLocaleString()} goal`}</div></div>
+    <div class="card"><div class="label">Members now</div><div class="big">${current.toLocaleString()}</div><div class="sub">${usingMaster?`confirmed members, ${MASTER.asOf}`:`of ${GOAL.toLocaleString()} goal`}</div></div>
     <div class="card hot"><div class="label">Still needed</div><div class="big">${stillNeeded===0?"🎉 0":stillNeeded.toLocaleString()}</div><div class="sub">${daysLeft} days left in 2026</div></div>
     <div class="card"><div class="label">Needed / week</div><div class="big">${neededPerWeek.toFixed(1)}</div><div class="sub">to hit Dec 31</div></div>
     <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">${paceSource} ${badge}</div></div>
+    ${live && "jotform_week_wed" in live ? `<div class="card hot"><div class="label">Signed up this week</div><div class="big">${live.jotform_week_wed.toLocaleString()}</div><div class="sub">Jotform since Wed · last week: ${(live.jotform_prev_week??"—")}</div></div>` : ""}`;
+
+  // Cards (below hero: warm leads + new intake)
+  document.getElementById("cards2").innerHTML = `
     <div class="card"><div class="label">Warm leads</div><div class="big">${poolTotal.toLocaleString()}</div><div class="sub">unique people, qualified + waitlist, ${poolWhen}</div></div>
-    ${live && "jotform_week_wed" in live ? `<div class="card hot"><div class="label">Signed up this week</div><div class="big">${live.jotform_week_wed.toLocaleString()}</div><div class="sub">Jotform since Wed · last week: ${(live.jotform_prev_week??"—")}</div></div>` : ""}
     ${live && "new_leads_7d" in live ? `<div class="card"><div class="label">New intake leads, 7 days</div><div class="big">${live.new_leads_7d.toLocaleString()}</div><div class="sub">interest via the website form — not payments</div></div>` : ""}`;
 
   // Progress bar
