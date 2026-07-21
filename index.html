@@ -330,13 +330,13 @@ function render(rows, live){
   // Cards (hero: 5 cards)
   document.getElementById("cards").innerHTML = `
     <div class="card"><div class="label">Members now</div><div class="big">${current.toLocaleString()}</div><div class="sub">${usingMaster?`confirmed members, ${MASTER.asOf}`:`of ${GOAL.toLocaleString()} goal`}</div></div>
-    <div class="card hot"><div class="label">Still needed</div><div class="big">${stillNeeded===0?"🎉 0":stillNeeded.toLocaleString()}</div><div class="sub">${daysLeft} days left in 2026</div></div>
-    <div class="card"><div class="label">Needed / week</div><div class="big">${neededPerWeek.toFixed(1)}</div><div class="sub">to hit Dec 31</div></div>
-    <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">${paceSource} ${badge}</div></div>
-    ${live && "jotform_week_wed" in live ? `<div class="card hot"><div class="label">Signed up this week</div><div class="big">${live.jotform_week_wed.toLocaleString()}</div><div class="sub">Jotform since Wed · last week: ${(live.jotform_prev_week??"—")}</div></div>` : ""}`;
+    <div class="card hot"><div class="label">Still needed</div><div class="big">${stillNeeded===0?"🎉 0":stillNeeded.toLocaleString()}</div><div class="sub">${daysLeft} days left in 2026</div></div>`;
 
   // Cards (below hero: warm leads + new intake)
   document.getElementById("cards2").innerHTML = `
+    <div class="card"><div class="label">Needed / week</div><div class="big">${neededPerWeek.toFixed(1)}</div><div class="sub">to hit Dec 31</div></div>
+    <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">${paceSource} ${badge}</div></div>
+    ${live && "jotform_week_wed" in live ? `<div class="card hot"><div class="label">Signed up this week</div><div class="big">${live.jotform_week_wed.toLocaleString()}</div><div class="sub">Jotform since Wed · last week: ${(live.jotform_prev_week??"—")}</div></div>` : ""}
     <div class="card"><div class="label">Warm leads</div><div class="big">${poolTotal.toLocaleString()}</div><div class="sub">unique people, qualified + waitlist, ${poolWhen}</div></div>
     ${live && "new_leads_7d" in live ? `<div class="card"><div class="label">New people, last 7 days</div><div class="big">${live.new_leads_7d.toLocaleString()}</div><div class="sub">first-time website form submissions — not payments</div></div>` : ""}`;
 
