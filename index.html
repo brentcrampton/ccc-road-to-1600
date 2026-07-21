@@ -94,8 +94,6 @@
   .cartbar div{display:flex;align-items:center;justify-content:center;color:var(--pulp);font-family:'Catamaran',sans-serif;font-weight:800;font-size:.68rem;white-space:nowrap}
   .cartlegend{font-size:.72rem;color:var(--grass);margin-top:6px}
   @media(max-width:760px){.tellus{grid-template-columns:1fr}}
-  .cac{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  @media(max-width:760px){.cac{grid-template-columns:1fr}}
   .batch-col.logged .batch-bar{background:var(--gem)}
   .batch-chart{display:flex;align-items:flex-end;gap:6px;height:190px;background:#fff;border-radius:14px;padding:18px 18px 8px;box-shadow:0 6px 18px rgba(15,58,35,.08)}
   .batch-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
@@ -172,12 +170,6 @@
     <h2>Where signups are coming from</h2>
     <div class="note">Actuals from Jotform signups through Jul 15 (121 members), refreshed with each weekly export. Referrals and drop-off switchers were asked of everyone; the "where did you hear about us" question was answered by 34 of 121 (it was optional at first), so the other bars undercount. A member can credit more than one channel — these bars measure each lever's contribution, not a headcount.</div>
     <div class="channels" id="channels"></div>
-  </section>
-
-  <section>
-    <h2>Paid acquisition: cost per signup</h2>
-    <div class="note"><strong>Still collecting data</strong> — the signup form only started requiring the "where did you hear about us" question on Jul 18, so very few signups are ad-credited yet. Ad spend is exact, but cost-per-signup stays marked "collecting" until enough ad-credited signups come in to make it reliable; then it shows against the plan's $50 target. No conclusions off this section yet.</div>
-    <div class="cac" id="cac"></div>
   </section>
 
 
@@ -408,28 +400,6 @@ function render(rows, live){
   for(const [h,v] of Object.entries(sums)){ if(!consumed.has(h)) rowsHtml.push(channelRow(h, v, null, null)); }
   const maxScale = Math.max(700, ...Object.values(sums)) * 1.05;
   chDiv.innerHTML = rowsHtml.map(r=>r(maxScale)).join("") || `<div class="empty-state">Channel numbers appear with the next Jotform export.</div>`;
-
-  // Paid acquisition / CAC — spend entered by the team in Live counts rows 10-11
-  const adSpend = (live && (live.ad_spend_meta||0)+(live.ad_spend_google||0)) || 0;
-  const adSignups = JOTFORM_INSIGHTS.channelSeed["Meta ads"] || 0;
-  const CAC_READY_AT = 25; // ad-credited signups needed before cost-per-signup is trustworthy
-  const cacDiv = document.getElementById("cac");
-  if(!adSpend){
-    cacDiv.innerHTML = `<div class="empty-state" style="grid-column:1/-1">No ad spend entered yet — add cumulative Meta and Google spend to the Live counts tab (rows 10–11) and CAC appears here automatically.</div>`;
-  } else if(adSignups < CAC_READY_AT){
-    // Not enough ad-credited signups yet — show a clear "collecting" state instead of an alarming CAC off a tiny denominator
-    cacDiv.innerHTML = `
-      <div class="tell"><div class="num">$${Math.round(adSpend).toLocaleString()}</div><div class="what">ad spend to date (Meta + Google)</div></div>
-      <div class="tell"><div class="num">${adSignups}</div><div class="what">ad-credited signups so far · need ${CAC_READY_AT}+ for a reliable read <span class="badge wait">Collecting data</span></div></div>
-      <div class="tell"><div class="num" style="color:var(--gem);font-size:1.5rem">Still collecting</div><div class="what">cost per signup will appear once enough signups are ad-credited <span class="badge wait">Collecting data</span></div></div>`;
-  } else {
-    const cac = adSpend/adSignups;
-    const cacBadge = cac<=50 ? `<span class="badge ok">Under the $50 stop</span>` : `<span class="badge bad">Over the $50 stop</span>`;
-    cacDiv.innerHTML = `
-      <div class="tell"><div class="num">$${Math.round(adSpend).toLocaleString()}</div><div class="what">ad spend to date (Meta + Google)</div></div>
-      <div class="tell"><div class="num">${adSignups}</div><div class="what">signups credited to ads</div></div>
-      <div class="tell"><div class="num">$${Math.round(cac).toLocaleString()}</div><div class="what">current cost per signup ${cacBadge}</div></div>`;
-  }
 
   document.getElementById("updated").textContent =
     `Live from the tracker · loaded ${today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}, ${today.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`;
