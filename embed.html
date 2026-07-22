@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Road to 1,600 — live counter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@900&family=Catamaran:wght@800&family=Hepta+Slab:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --earthy:#0F3A23; --grass:#5B7048; --spearmint:#A6B88A;
+    --pale:#D1D7C3; --pulp:#F6F5EF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--earthy);color:var(--pulp);font-family:'Hepta Slab',Georgia,serif;font-weight:300;display:flex;align-items:center}
+  .strip{width:100%;max-width:1080px;margin:0 auto;padding:16px 22px}
+  .kicker{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.14em;font-size:.72rem;color:var(--spearmint)}
+  .kicker .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--spearmint);margin-right:6px;vertical-align:1px}
+  .line{font-family:'Raleway',sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:.02em;font-size:clamp(1.05rem,3.4vw,1.6rem);margin-top:4px;line-height:1.2}
+  .line .accent{color:var(--spearmint)}
+  .progress-shell{background:rgba(246,245,239,.18);border-radius:14px;height:22px;position:relative;overflow:hidden;margin-top:10px}
+  .progress-fill{background:linear-gradient(90deg,var(--spearmint),var(--pulp));height:100%;border-radius:14px;min-width:44px;display:flex;align-items:center;justify-content:flex-end;padding-right:9px;color:var(--earthy);font-family:'Catamaran',sans-serif;font-weight:800;font-size:.7rem;transition:width .9s ease}
+  .marks{display:flex;justify-content:space-between;font-size:.68rem;color:var(--pale);margin-top:5px}
+</style>
+</head>
+<body>
+  <div class="strip">
+    <div class="kicker"><span class="dot"></span>The Road to 1,600 · live count</div>
+    <div class="line" id="line">Loading the count…</div>
+    <div class="progress-shell"><div class="progress-fill" id="fill" style="width:4%"></div></div>
+    <div class="marks"><span id="markLeft"></span><span>1,600 by Dec 31</span></div>
+  </div>
+
+<script src="data.js"></script>
+<script>
+/* Same source of truth as the team dashboard: MASTER (confirmed members, data.js)
+   vs the tracker's Weekly Log CSV — whichever is higher wins. If the fetch fails,
+   the baked MASTER_TOTAL still renders, so the counter never shows an error. */
+function parseCSV(text){
+  const rows=[]; let row=[], cell="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(cell); cell=""; }
+    else if(c==='\n'){ row.push(cell); rows.push(row); row=[]; cell=""; }
+    else if(c!=='\r') cell+=c;
+  }
+  if(cell!==""||row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+const num = v => { const n=parseFloat(String(v).replace(/[$,%\s]/g,"")); return isNaN(n)?null:n; };
+
+function render(current){
+  const pct = Math.min(100, Math.max(3, current/GOAL*100));
+  document.getElementById("line").innerHTML =
+    `<span class="accent">${current.toLocaleString()}</span> of 1,600 Omaha households are in`;
+  const fill = document.getElementById("fill");
+  fill.style.width = pct + "%";
+  fill.textContent = Math.round(pct) + "%";
+  document.getElementById("markLeft").textContent =
+    `${Math.max(0, GOAL-current).toLocaleString()} spots left`;
+}
+
+render(MASTER_TOTAL); // instant paint, no waiting on the network
+
+fetch(SHEET_CSV_URL,{cache:"no-store"})
+  .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
+  .then(text=>{
+    const rows = parseCSV(text);
+    const header = rows[0].map(h=>h.trim());
+    const idx = n => header.findIndex(h=>h.toLowerCase()===n.toLowerCase());
+    const iWeek=idx("Week ending"), iTotal=idx("Total customers"), iNet=idx("Net adds");
+    if(iTotal<0) return;
+    const data = rows.slice(1).filter(r=>r.some(c=>c.trim()!==""));
+    let current=BASELINE, found=false, bestDate=null;
+    for(const r of data){
+      const t=num(r[iTotal]); if(t===null) continue;
+      const d=new Date(r[iWeek]);
+      if(bestDate===null || (!isNaN(d) && d>=bestDate)){ current=t; found=true; if(!isNaN(d)) bestDate=d; }
+    }
+    if(!found && iNet>=0){
+      const adds = data.filter(r=>!/baseline/i.test(r[iWeek]||"")).map(r=>num(r[iNet])).filter(v=>v!==null);
+      if(adds.length) current = BASELINE + adds.reduce((a,b)=>a+b,0);
+    }
+    render(Math.max(current, MASTER_TOTAL));
+  })
+  .catch(()=>{ /* baked MASTER_TOTAL already rendered */ });
+</script>
+</body>
+</html>

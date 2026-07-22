@@ -179,29 +179,17 @@
   </footer>
 </div>
 
+<script src="data.js"></script>
 <script>
 /* ====== CONFIG ====== */
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRl4kwEpiLnOkxVcwaPJqoXO9beOaH_P9wb8uSkzPJCNpFkgH61I_Ml_Kg-y44BKKT3lfO3dtn3-065/pub?gid=1242657682&single=true&output=csv"; // Weekly Log tab, published to web as CSV
+// SHEET_CSV_URL, GOAL, BASELINE, MASTER and MASTER_TOTAL now live in data.js,
+// shared with embed.html (the counter on hillside.solutions). Weekly member-count
+// updates happen in data.js — not here.
 // "Live counts" tab of the intake sheet (fed by the Vercel intake widget on hillside.solutions/compostclub/curbside,
 // NOT by Jotform — Jotform signups only reach the master list via Maggie's weekly update). Aggregate numbers only, no personal data.
 const LIVE_COUNTS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ7nHubVwjBcd2AFXjIvGVCI78Rfi1tiBu6X2hh8V2yKyTmfpESBLyTUxEz6SzbN91vFPHmhjl8w4p8/pub?gid=952458942&single=true&output=csv";
-const GOAL = 1600;
-const BASELINE = 213;             // verified July 1, 2026
 const BASELINE_DATE = new Date(2026, 6, 1);
 const DEADLINE = new Date(2026, 11, 31);
-
-// Manually tallied from Maggie's master confirmed-customer list (color-coded onboarding batches).
-// Updated by Brent's weekly notification — last updated 2026-07-18, total 238 (CCC 1–238).
-const MASTER = {
-  asOf: "Jul 18",
-  batches: [
-    {week:"Apr 15", n:51, launch:true}, {week:"Apr 22", n:11}, {week:"Apr 29", n:31},
-    {week:"May 6",  n:22}, {week:"May 13", n:17}, {week:"May 20", n:26}, {week:"May 27", n:9},
-    {week:"Jun 3",  n:13}, {week:"Jun 11", n:11}, {week:"Jun 17", n:18}, {week:"Jun 24", n:5},
-    {week:"Jul 1",  n:8},  {week:"Jul 8",  n:9},  {week:"Jul 15", n:7}
-  ]
-};
-const MASTER_TOTAL = MASTER.batches.reduce((s,b)=>s+b.n,0);
 
 // Lead pools, counted from the CCC Signups + Waitlist sheet (updated with the master list each week).
 // Unique emails only (raw rows contain duplicates); verified by email match that neither pool
