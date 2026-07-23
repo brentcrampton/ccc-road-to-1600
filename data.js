@@ -9,14 +9,14 @@ const GOAL = 1600;
 const BASELINE = 213;             // verified July 1, 2026
 
 // Manually tallied from Maggie's master confirmed-customer list (color-coded onboarding batches).
-// Updated by Brent's weekly notification — last updated 2026-07-18, total 238 (CCC 1–238).
+// Updated by Brent's weekly notification — last updated 2026-07-23, total 254 (CCC 1–254).
 const MASTER = {
-  asOf: "Jul 18",
+  asOf: "Jul 23",
   batches: [
     {week:"Apr 15", n:51, launch:true}, {week:"Apr 22", n:11}, {week:"Apr 29", n:31},
     {week:"May 6",  n:22}, {week:"May 13", n:17}, {week:"May 20", n:26}, {week:"May 27", n:9},
     {week:"Jun 3",  n:13}, {week:"Jun 11", n:11}, {week:"Jun 17", n:18}, {week:"Jun 24", n:5},
-    {week:"Jul 1",  n:8},  {week:"Jul 8",  n:9},  {week:"Jul 15", n:7}
+    {week:"Jul 1",  n:8},  {week:"Jul 8",  n:9},  {week:"Jul 15", n:7},  {week:"Jul 22", n:16}
   ]
 };
 const MASTER_TOTAL = MASTER.batches.reduce((s,b)=>s+b.n,0);
