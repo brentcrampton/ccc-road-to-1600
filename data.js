@@ -17,6 +17,9 @@ const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRl4kwEpi
 
 // "Dashboard Feed" tab of Maggie's Master Confirmed Customer List, published to web as CSV.
 // Three columns: type,label,n — where type is one of scalar | batch | cart | channel | zip.
+// Scalars: org_rows, provisioned_accounts, referred, dcc_yes, dcc_no, channel_answered, data_through.
+// data_through is the latest Submission Date actually on file — NOT today's date, so the
+// "as of" label tells the truth when a couple of days go by between exports.
 // AGGREGATE COUNTS ONLY. Keep it that way: this tab is publicly readable.
 // Published 2026-07-28. If this ever 404s, re-publish the tab and swap the URL — while it is
 // empty or unreachable the dashboard silently uses the baked fallbacks below.
@@ -107,8 +110,15 @@ function applyCustomerFeed(rows, insights, zips){
     else if(type === "zip")           zipMembers[label] = (zipMembers[label] || 0) + n;
   }
 
-  const total = scalars.master_total;
-  if(typeof total !== "number" || total <= 0) return null;   // feed present but unusable
+  // "Brent's Organized Sheet" is the source of truth (Jotform exports pasted in every ~2 days),
+  // so org_rows leads. But it can't undercount households already being serviced, and it was
+  // still catching up on history as of 28 Jul (230 rows vs 254 provisioned accounts) — so the
+  // headline takes whichever is higher. Once the exports pass 254 this becomes org_rows alone
+  // and provisioned_accounts stops mattering, with no code change needed.
+  const org  = typeof scalars.org_rows === "number" ? scalars.org_rows : 0;
+  const prov = typeof scalars.provisioned_accounts === "number" ? scalars.provisioned_accounts : 0;
+  const total = Math.max(org, prov);
+  if(total <= 0) return null;   // feed present but unusable
 
   // Batch labels are "M.D.YY" strings from the Location Notes onboarding stamp (e.g. "mh 7.22.26").
   // Sorted chronologically and shown verbatim — the stamp IS the batch date, so no adjustment
@@ -116,7 +126,7 @@ function applyCustomerFeed(rows, insights, zips){
   // to force them onto Wednesdays would misstate the data.)
   batches.sort((a,b) => batchDate(a.raw) - batchDate(b.raw));
   const master = {
-    asOf: scalars.updated ? shortDate(scalars.updated) : MASTER.asOf,
+    asOf: scalars.data_through ? shortDate(scalars.data_through) :MASTER.asOf,
     batches: batches.map((b,i) => ({
       week: batchDate(b.raw).toLocaleDateString("en-US",{month:"short",day:"numeric"}),
       n: b.n,
@@ -133,7 +143,7 @@ function applyCustomerFeed(rows, insights, zips){
 
   const sample = scalars.org_rows || total;
   const newInsights = {
-    asOf: scalars.updated ? shortDate(scalars.updated) : insights.asOf,
+    asOf: scalars.data_through ? shortDate(scalars.data_through) :insights.asOf,
     n: sample,
     answered: scalars.channel_answered || 0,
     referred: scalars.referred || 0,
