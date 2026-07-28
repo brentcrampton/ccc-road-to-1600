@@ -159,7 +159,18 @@ function applyCustomerFeed(rows, insights, zips){
   // intake sheet, so the table's row set is left exactly as it is.
   const newZips = zips.map(z => ({ ...z, m: (z.zip in zipMembers) ? zipMembers[z.zip] : z.m }));
 
-  return { master, masterTotal: total, insights: newInsights, zips: newZips, scalars };
+  // Days since the newest signup on file. Drives the staleness badge: the whole point of a
+  // self-updating dashboard is that nobody eyeballs it before the team quotes it, so the page
+  // has to say so itself when the exports stop coming.
+  let staleDays = null;
+  const dt = String(scalars.data_through || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(dt){
+    const then = new Date(+dt[1], +dt[2]-1, +dt[3]);
+    const now  = new Date();
+    staleDays = Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate()) - then)/86400000);
+  }
+
+  return { master, masterTotal: total, insights: newInsights, zips: newZips, scalars, staleDays };
 }
 
 // Shared fetch helper — resolves to parsed rows, or null on any failure (never throws).

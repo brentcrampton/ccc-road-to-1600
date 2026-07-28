@@ -104,6 +104,7 @@
   .batch-week{font-size:.6rem;color:var(--grass);margin-top:5px;white-space:nowrap;transform:rotate(-38deg);transform-origin:top center;height:26px}
   .empty-state{background:#fff;border:2px dashed var(--pale);border-radius:14px;padding:28px;text-align:center;color:var(--grass);font-size:.85rem}
   .error-state{background:#fff;border-left:6px solid var(--tiger);border-radius:10px;padding:18px 22px;font-size:.85rem;margin-top:24px}
+  .stale-state{background:#fdf3ec;border-left:6px solid var(--earthy);border-radius:10px;padding:14px 18px;font-size:.82rem;margin:18px 0 0;color:#5d4622}
 
   footer{margin-top:56px;font-size:.7rem;color:var(--grass);border-top:1px solid var(--pale);padding-top:14px}
   @media(max-width:640px){.ch-row{grid-template-columns:1fr;gap:4px}.ch-nums{text-align:left}}
@@ -151,6 +152,7 @@
   <section>
     <h2>What signups tell us</h2>
     <div class="note" id="tellusNote"></div>
+    <div id="staleNote"></div>
     <div class="tellus" id="tellus"></div>
   </section>
 
@@ -423,6 +425,26 @@ function channelRow(label, actual, lo, hi){
   };
 }
 
+/* The confirmed-customer list is updated by hand every couple of days. If those exports stop,
+   every percentage on this page silently freezes while still looking authoritative — so say it
+   out loud. STALE_AFTER is deliberately generous: a 3-day gap over a weekend is normal. */
+const STALE_AFTER = 5;
+function showStaleness(feedLive, staleDays){
+  const el = document.getElementById("staleNote");
+  if(!el) return;
+  if(!feedLive){
+    el.className = "stale-state";
+    el.innerHTML = `<b>Showing last known numbers.</b> The confirmed-customer feed didn't load, so
+      the figures below are the most recent snapshot saved into the page rather than live data.`;
+    return;
+  }
+  if(staleDays === null || staleDays <= STALE_AFTER){ el.className=""; el.innerHTML=""; return; }
+  el.className = "stale-state";
+  el.innerHTML = `<b>These numbers may be behind.</b> The newest signup on file is
+    ${staleDays} days old, and the list is normally updated every couple of days. Treat the
+    percentages as a floor until the next export lands.`;
+}
+
 function showError(msg){
   document.getElementById("updated").textContent="Couldn't load live data";
   document.getElementById("cards").insertAdjacentHTML("beforebegin",
@@ -445,16 +467,17 @@ Promise.allSettled([
   }
   // Confirmed-customer feed: member count, onboarding batches, cart split, referral count,
   // drop-off switchers, channel mix, zip member counts. Silently keeps the baked values on failure.
-  let feedLive=false;
+  let feedLive=false, staleDays=null;
   if(feedRes.status==="fulfilled" && feedRes.value){
     const f=applyCustomerFeed(feedRes.value, JOTFORM_INSIGHTS, ZIPS);
     if(f){
       MASTER=f.master; MASTER_TOTAL=f.masterTotal;
       JOTFORM_INSIGHTS=f.insights; ZIPS=f.zips;
-      feedLive=true;
+      feedLive=true; staleDays=f.staleDays;
     }
   }
   render(rows, live, feedLive);
+  showStaleness(feedLive, staleDays);
 });
 </script>
 </body>
