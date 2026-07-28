@@ -150,13 +150,13 @@
 
   <section>
     <h2>What signups tell us</h2>
-    <div class="note">From the Jotform signup form, all 121 members since May 5 (updated Jul 15). Guides referral promotion and cart purchasing.</div>
+    <div class="note" id="tellusNote"></div>
     <div class="tellus" id="tellus"></div>
   </section>
 
   <section>
     <h2>Where the demand lives</h2>
-    <div class="note">By zip code: members (Jotform, since May 5) vs. website-form interest (raw submissions, live sheet counts as of Jul 18). Sorted by waitlist — big waitlist with few members marks the next zones to open: 68164, 68144, 68154, 68135, 68137. Another ~90 waitlist entries are outside the metro or one-offs.</div>
+    <div class="note" id="zipNote">By zip code: confirmed members vs. website-form interest (raw submissions, live sheet counts as of Jul 18). Sorted by waitlist — big waitlist with few members marks the next zones to open: 68164, 68144, 68154, 68135, 68137. Another ~90 waitlist entries are outside the metro or one-offs.</div>
     <div class="table-scroll" id="zipTable"></div>
   </section>
 
@@ -168,7 +168,7 @@
 
   <section>
     <h2>Where signups are coming from</h2>
-    <div class="note">Actuals from Jotform signups through Jul 15 (121 members), refreshed with each weekly export. Referrals and drop-off switchers were asked of everyone; the "where did you hear about us" question was answered by 34 of 121 (it was optional at first), so the other bars undercount. A member can credit more than one channel — these bars measure each lever's contribution, not a headcount.</div>
+    <div class="note" id="channelNote"></div>
     <div class="channels" id="channels"></div>
   </section>
 
@@ -196,16 +196,18 @@ const DEADLINE = new Date(2026, 11, 31);
 // contains anyone already on the confirmed-customer list. `both` = people on both lists.
 const POOLS = { asOf:"Jul 18", qualified:242, waitlist:300, both:60 };
 
-// From weekly Jotform signup exports (processed by ../jotform_tally.py — aggregates only, no PII)
-const JOTFORM_INSIGHTS = {
+// FALLBACK ONLY. Live values now come from the "Dashboard Feed" tab of the confirmed-customer
+// sheet (see CUSTOMER_FEED_CSV in data.js), which covers 232 confirmed households instead of
+// the 121 in this old Jotform export. Kept so the page still renders if the feed is unreachable.
+let JOTFORM_INSIGHTS = {
   asOf: "Jul 15", n: 121, answered: 34,
-  referred: 38, dropoffSwitchers: 38,
+  referred: 38, dropoffSwitchers: 38, dropoffAnswered: 121,
   channelSeed: {"Referral": 38, "Drop-off email": 38, "Organic / WOM": 16, "Meta ads": 2, "Speaking": 2, "Press / podcast": 1, "Other": 6},
   carts: [{"label":"35-gallon","n":101},{"label":"65-gallon","n":12},{"label":"95-gallon","n":8}]
 };
 
-// Zip demand: members = Jotform since May 5; qualified/waitlist = intake-form submissions (raw), Jul 18
-const ZIPS = [
+// Zip demand: Members refreshed from the customer feed; qualified/waitlist = intake-form submissions (raw), Jul 18
+let ZIPS = [
  {zip:"68164",m:5,q:8,w:24},{zip:"68144",m:4,q:5,w:23},{zip:"68154",m:2,q:0,w:20},
  {zip:"68114",m:12,q:37,w:15},{zip:"68135",m:0,q:0,w:12},{zip:"68137",m:0,q:0,w:11},
  {zip:"68124",m:24,q:35,w:11},{zip:"68112",m:0,q:2,w:10},{zip:"68152",m:1,q:0,w:10},
@@ -250,7 +252,7 @@ const parseWeekDate = s => { const d=new Date(s); return isNaN(d)?null:d; };
 function fmtDate(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
 function daysBetween(a,b){ return Math.max(0, Math.round((b-a)/86400000)); }
 
-function render(rows, live){
+function render(rows, live, feedLive){
   const header = rows[0].map(h=>h.trim());
   const data = rows.slice(1).filter(r=>r.some(c=>c.trim()!==""));
   const idx = name => header.findIndex(h=>h.toLowerCase()===name.toLowerCase());
@@ -338,9 +340,15 @@ function render(rows, live){
   // What signups tell us
   const JI=JOTFORM_INSIGHTS, cartsTotal=JI.carts.reduce((s,c)=>s+c.n,0);
   const cartColors=["var(--earthy)","var(--grass)","var(--gem)"];
+  const dccBase = JI.dropoffAnswered || JI.n;
+  const srcLine = feedLive
+    ? `From the confirmed-customer list — ${JI.n.toLocaleString()} households with signup detail on file, refreshed every couple of days (last ${JI.asOf}).`
+    : `From the Jotform signup export — ${JI.n.toLocaleString()} members (updated ${JI.asOf}).`;
+  document.getElementById("tellusNote").textContent =
+    `${srcLine} Guides referral promotion and cart purchasing. The drop-off switcher share is out of the ${dccBase.toLocaleString()} who answered that question.`;
   document.getElementById("tellus").innerHTML=`
     <div class="tell"><div class="num">${Math.round(JI.referred/JI.n*100)}%</div><div class="what">named a referrer when signing up</div></div>
-    <div class="tell"><div class="num">${Math.round(JI.dropoffSwitchers/JI.n*100)}%</div><div class="what">switched from Drop-off Compost Club</div></div>
+    <div class="tell"><div class="num">${Math.round(JI.dropoffSwitchers/dccBase*100)}%</div><div class="what">switched from Drop-off Compost Club</div></div>
     <div class="tell"><div class="what" style="margin-top:0">Cart sizes chosen</div>
       <div class="cartbar">${JI.carts.map((c,i)=>`<div style="width:${(c.n/cartsTotal*100).toFixed(1)}%;background:${cartColors[i%3]}">${Math.round(c.n/cartsTotal*100)}%</div>`).join("")}</div>
       <div class="cartlegend">${JI.carts.map(c=>`${c.label}: ${c.n}`).join(" · ")}</div>
@@ -354,7 +362,11 @@ function render(rows, live){
 
   // One timeline: onboarding batches from the master list, then logged weeks from the tracker (blue)
   const timeline = MASTER.batches.map(b=>({...b}));
-  const lastBatchDate = new Date("2026-07-15");
+  const lastBatchDate = new Date(new Date().getFullYear(), 0, 1);
+  MASTER.batches.forEach(b=>{
+    const d=parseWeekDate(b.week+", 2026");
+    if(d!==null && d>lastBatchDate) lastBatchDate.setTime(d.getTime());
+  });
   weekRows.forEach(r=>{
     const d=parseWeekDate(r[iWeek]), n=num(r[iNet]);
     if(d!==null && n!==null && d>lastBatchDate)
@@ -362,7 +374,7 @@ function render(rows, live){
   });
   const maxBatch = Math.max(...timeline.map(b=>b.n));
   document.getElementById("batchNote").textContent =
-    `One timeline since the Apr 15 launch: green bars are confirmed members per Wednesday onboarding batch (master list, updated ${MASTER.asOf}); blue bars are weeks logged in the tracker as they happen.`;
+    `One timeline since the Apr 15 launch: green bars are confirmed members per Wednesday onboarding batch (confirmed-customer list, ${feedLive?"read live":"updated"} ${MASTER.asOf}); blue bars are weeks logged in the tracker as they happen.`;
   document.getElementById("batchChart").innerHTML = timeline.map(b=>`
     <div class="batch-col${b.launch?" launch":""}${b.logged?" logged":""}">
       <div class="batch-count">${b.n}</div>
@@ -387,7 +399,11 @@ function render(rows, live){
   // Any new columns added to the sheet later show up automatically
   for(const [h,v] of Object.entries(sums)){ if(!consumed.has(h)) rowsHtml.push(channelRow(h, v, null, null)); }
   const maxScale = Math.max(700, ...Object.values(sums)) * 1.05;
-  chDiv.innerHTML = rowsHtml.map(r=>r(maxScale)).join("") || `<div class="empty-state">Channel numbers appear with the next Jotform export.</div>`;
+  chDiv.innerHTML = rowsHtml.map(r=>r(maxScale)).join("") || `<div class="empty-state">Channel numbers appear once the confirmed-customer feed is reachable.</div>`;
+
+  document.getElementById("channelNote").textContent = feedLive
+    ? `Actuals from the confirmed-customer list (${JI.n.toLocaleString()} households, last updated ${JI.asOf}). Referrals come from the Referred column and drop-off switchers from the existing-member column, so both cover everyone. The "where did you first hear about us" question was answered by only ${JI.answered} of ${JI.n.toLocaleString()}, so the remaining bars undercount. Answers are free text, keyword-bucketed into these levers — online-search answers currently land in Other. A member can credit more than one channel: these bars measure each lever's contribution, not a headcount, and should never be summed.`
+    : `Actuals from the Jotform signup export (${JI.n.toLocaleString()} members, ${JI.asOf}). The "where did you hear about us" question was answered by ${JI.answered} of ${JI.n.toLocaleString()}, so those bars undercount. A member can credit more than one channel — these bars measure each lever's contribution, not a headcount.`;
 
   document.getElementById("updated").textContent =
     `Live from the tracker · loaded ${today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}, ${today.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`;
@@ -415,8 +431,9 @@ function showError(msg){
 
 Promise.allSettled([
   fetch(SHEET_CSV_URL,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); }),
-  fetch(LIVE_COUNTS_CSV,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); })
-]).then(([weekly, liveRes])=>{
+  fetch(LIVE_COUNTS_CSV,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); }),
+  fetchCustomerFeed(parseCSV)
+]).then(([weekly, liveRes, feedRes])=>{
   if(weekly.status!=="fulfilled"){ showError(weekly.reason.message); return; }
   const rows=parseCSV(weekly.value);
   if(!rows.length||rows[0].length<3){ showError("Unexpected sheet format"); return; }
@@ -426,7 +443,18 @@ Promise.allSettled([
     parseCSV(liveRes.value).forEach(r=>{ const v=num(r[1]); if(r[0]&&v!==null) live[r[0].trim()]=v; });
     if(!("qualified_unique" in live)) live=null; // shape check — fall back to baked numbers
   }
-  render(rows, live);
+  // Confirmed-customer feed: member count, onboarding batches, cart split, referral count,
+  // drop-off switchers, channel mix, zip member counts. Silently keeps the baked values on failure.
+  let feedLive=false;
+  if(feedRes.status==="fulfilled" && feedRes.value){
+    const f=applyCustomerFeed(feedRes.value, JOTFORM_INSIGHTS, ZIPS);
+    if(f){
+      MASTER=f.master; MASTER_TOTAL=f.masterTotal;
+      JOTFORM_INSIGHTS=f.insights; ZIPS=f.zips;
+      feedLive=true;
+    }
+  }
+  render(rows, live, feedLive);
 });
 </script>
 </body>
