@@ -251,6 +251,16 @@ const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const parseWeekDate = s => { const d=new Date(s); return isNaN(d)?null:d; };
 
 /* ====== RENDER ====== */
+/* This page is read by the Omaha team but edited from Adelaide, and the browser renders dates in
+   whatever timezone the VIEWER is in — so the same page showed two different "loaded" times and
+   could disagree by a calendar day on the countdown. Everything user-facing is pinned to Omaha. */
+const OMAHA = "America/Chicago";
+// "now", expressed as an Omaha calendar date, so days-left never differs by viewer.
+function omahaToday(){
+  const p = new Intl.DateTimeFormat("en-CA",{timeZone:OMAHA,year:"numeric",month:"2-digit",day:"2-digit"})
+    .format(new Date()).split("-");
+  return new Date(+p[0], +p[1]-1, +p[2]);
+}
 function fmtDate(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
 function daysBetween(a,b){ return Math.max(0, Math.round((b-a)/86400000)); }
 
@@ -281,7 +291,7 @@ function render(rows, live, feedLive){
   if(usingMaster) current = MASTER_TOTAL;
 
   const today = new Date();
-  const daysLeft = daysBetween(today, DEADLINE);
+  const daysLeft = daysBetween(omahaToday(), DEADLINE);   // count days in Omaha, not the viewer's zone
   const weeksLeft = Math.max(daysLeft/7, 0.01);
   const stillNeeded = Math.max(0, GOAL-current);
   const neededPerWeek = stillNeeded/weeksLeft;
@@ -408,7 +418,8 @@ function render(rows, live, feedLive){
     : `Actuals from the Jotform signup export (${JI.n.toLocaleString()} members, ${JI.asOf}). The "where did you hear about us" question was answered by ${JI.answered} of ${JI.n.toLocaleString()}, so those bars undercount. A member can credit more than one channel — these bars measure each lever's contribution, not a headcount.`;
 
   document.getElementById("updated").textContent =
-    `Live from the tracker · loaded ${today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}, ${today.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`;
+    `Live from the tracker · loaded ${today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",timeZone:OMAHA})}, ` +
+    `${today.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:OMAHA})} Omaha time`;
 }
 
 function channelRow(label, actual, lo, hi){
