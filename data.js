@@ -69,6 +69,13 @@ function bucketChannel(label){
   return "Other";
 }
 
+// "2026-07-27" → "Jul 27". Anything unparseable is passed through unchanged.
+function shortDate(iso){
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m) return String(iso);
+  return new Date(+m[1], +m[2]-1, +m[3]).toLocaleDateString("en-US",{month:"short",day:"numeric"});
+}
+
 function batchDate(raw){
   const p = String(raw).split(".");
   if(p.length !== 3) return new Date(0);
@@ -87,9 +94,12 @@ function applyCustomerFeed(rows, insights, zips){
   for(const r of rows.slice(1)){
     const type  = String(r[0] || "").trim();
     const label = String(r[1] || "").trim();
-    const n     = parseFloat(String(r[2] || "").replace(/[^0-9.\-]/g, ""));
+    const raw   = String(r[2] || "").trim();
+    // Strict numeric test on purpose: a loose parseFloat turns the "2026-07-27" date stamp
+    // into the number 2026, which is how "updated Jul 27" once rendered as "updated 2026".
+    const n     = /^-?\d+(\.\d+)?$/.test(raw.replace(/,/g,"")) ? parseFloat(raw.replace(/,/g,"")) : NaN;
     if(!type || !label) continue;
-    if(type === "scalar"){ scalars[label] = isNaN(n) ? String(r[2]).trim() : n; continue; }
+    if(type === "scalar"){ scalars[label] = isNaN(n) ? raw : n; continue; }
     if(isNaN(n)) continue;
     if(type === "batch")        batches.push({ raw: label, n });
     else if(type === "cart")    { const k = normaliseCart(label);  if(k) carts[k]      = (carts[k]      || 0) + n; }
@@ -106,7 +116,7 @@ function applyCustomerFeed(rows, insights, zips){
   // to force them onto Wednesdays would misstate the data.)
   batches.sort((a,b) => batchDate(a.raw) - batchDate(b.raw));
   const master = {
-    asOf: scalars.updated || MASTER.asOf,
+    asOf: scalars.updated ? shortDate(scalars.updated) : MASTER.asOf,
     batches: batches.map((b,i) => ({
       week: batchDate(b.raw).toLocaleDateString("en-US",{month:"short",day:"numeric"}),
       n: b.n,
@@ -123,7 +133,7 @@ function applyCustomerFeed(rows, insights, zips){
 
   const sample = scalars.org_rows || total;
   const newInsights = {
-    asOf: scalars.updated || insights.asOf,
+    asOf: scalars.updated ? shortDate(scalars.updated) : insights.asOf,
     n: sample,
     answered: scalars.channel_answered || 0,
     referred: scalars.referred || 0,
