@@ -163,7 +163,7 @@
   </section>
 
   <section>
-    <h2>Signups by onboarding week</h2>
+    <h2>Signups by week</h2>
     <div class="note" id="batchNote"></div>
     <div class="batch-chart" id="batchChart"></div>
   </section>
@@ -264,7 +264,7 @@ function omahaToday(){
 function fmtDate(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
 function daysBetween(a,b){ return Math.max(0, Math.round((b-a)/86400000)); }
 
-function render(rows, live, feedLive){
+function render(rows, live, feedLive, pending){
   const header = rows[0].map(h=>h.trim());
   const data = rows.slice(1).filter(r=>r.some(c=>c.trim()!==""));
   const idx = name => header.findIndex(h=>h.toLowerCase()===name.toLowerCase());
@@ -301,9 +301,14 @@ function render(rows, live, feedLive){
   let avgPace = netAdds.length ? netAdds.reduce((a,b)=>a+b,0)/netAdds.length : null;
   let paceSource = "avg net adds/week";
   if(avgPace===null && MASTER.batches.length>=4){
-    const last4 = MASTER.batches.slice(-4);
-    avgPace = last4.reduce((s,b)=>s+b.n,0)/4;
-    paceSource = "avg of last 4 onboarding batches";
+    // Weeks run Wed–Tue, so the newest bucket is usually still in progress and would drag
+    // the average down — pace uses the last 4 COMPLETED weeks.
+    let done = MASTER.batches;
+    const lastD = parseWeekDate(done[done.length-1].week+", 2026");
+    if(lastD!==null && daysBetween(lastD, omahaToday()) < 7) done = done.slice(0,-1);
+    const last4 = done.slice(-4);
+    avgPace = last4.reduce((s,b)=>s+b.n,0)/last4.length;
+    paceSource = "avg of last 4 signup weeks";
   }
   const lastWait = (()=>{ let w=null; for(const r of logged){const v=num(r[iWait]); if(v!==null)w=v;} return w; })();
 
@@ -323,7 +328,7 @@ function render(rows, live, feedLive){
 
   // Cards (hero: 5 cards)
   document.getElementById("cards").innerHTML = `
-    <div class="card"><div class="label">Members now</div><div class="big">${current.toLocaleString()}</div><div class="sub">${usingMaster?`confirmed members, ${MASTER.asOf}`:`of ${GOAL.toLocaleString()} goal`}</div></div>
+    <div class="card"><div class="label">Members now</div><div class="big">${current.toLocaleString()}</div><div class="sub">${usingMaster?`confirmed members, ${MASTER.asOf}`:`of ${GOAL.toLocaleString()} goal`}${pending>0?` · <b>+${pending}</b> signed up since, awaiting confirmation`:""}</div></div>
     <div class="card hot"><div class="label">Still needed</div><div class="big">${stillNeeded===0?"🎉 0":stillNeeded.toLocaleString()}</div><div class="sub">${daysLeft} days left in 2026</div></div>`;
 
   // Cards (below hero: warm leads + new intake)
@@ -338,7 +343,7 @@ function render(rows, live, feedLive){
   const pct = Math.min(100, current/GOAL*100);
   const fill=document.getElementById("progressFill");
   fill.style.width=pct+"%"; fill.textContent=pct.toFixed(1)+"%";
-  document.getElementById("baselineMark").textContent = `Launched Apr 15 with ${MASTER.batches[0].n} founding members`;
+  document.getElementById("baselineMark").textContent = `Launched Apr 15, 2026`;
 
   // Pools
   document.getElementById("poolsAsOf").textContent =
@@ -385,8 +390,9 @@ function render(rows, live, feedLive){
       timeline.push({week:d.toLocaleDateString("en-US",{month:"short",day:"numeric"}), n, logged:true});
   });
   const maxBatch = Math.max(...timeline.map(b=>b.n));
-  document.getElementById("batchNote").textContent =
-    `One timeline since the Apr 15 launch: green bars are confirmed members per Wednesday onboarding batch (confirmed-customer list, ${feedLive?"read live":"updated"} ${MASTER.asOf}); blue bars are weeks logged in the tracker as they happen.`;
+  document.getElementById("batchNote").textContent = feedLive
+    ? `Confirmed signups per week — weeks run Wednesday–Tuesday — from the submission dates on the confirmed-customer list, read live through ${MASTER.asOf}. The newest week is usually still filling, and weeks with zero signups don't draw a bar. Blue bars are weeks logged in the tracker as they happen.`
+    : `Green bars are confirmed members per Wednesday onboarding batch (last saved snapshot, ${MASTER.asOf}); blue bars are weeks logged in the tracker as they happen.`;
   document.getElementById("batchChart").innerHTML = timeline.map(b=>`
     <div class="batch-col${b.launch?" launch":""}${b.logged?" logged":""}">
       <div class="batch-count">${b.n}</div>
@@ -440,7 +446,7 @@ function channelRow(label, actual, lo, hi){
    every percentage on this page silently freezes while still looking authoritative — so say it
    out loud. STALE_AFTER is deliberately generous: a 3-day gap over a weekend is normal. */
 const STALE_AFTER = 5;
-function showStaleness(feedLive, staleDays){
+function showStaleness(feedLive, staleDays, pending){
   const el = document.getElementById("staleNote");
   if(!el) return;
   if(!feedLive){
@@ -452,8 +458,27 @@ function showStaleness(feedLive, staleDays){
   if(staleDays === null || staleDays <= STALE_AFTER){ el.className=""; el.innerHTML=""; return; }
   el.className = "stale-state";
   el.innerHTML = `<b>These numbers may be behind.</b> The newest signup on file is
-    ${staleDays} days old, and the list is normally updated every couple of days. Treat the
+    ${staleDays} days old, and the list is normally updated every couple of days.${
+      pending>0?` <b>${pending} newer signup${pending===1?" is":"s are"}</b> sitting in Jotform
+    waiting for the next export.`:""} Treat the
     percentages as a floor until the next export lands.`;
+}
+
+/* Signups sitting in Jotform NEWER than the newest row on the confirmed-customer sheet.
+   Counted from the hourly jotform_d_YYYY-MM-DD rows in the Live counts tab — written by the
+   same timestamps-only script as the weekly Jotform card; encrypted answers are never read.
+   Returns null when either feed is missing, so the page says nothing rather than guessing.
+   Same-day signups after the last export aren't counted: this is a deliberate floor. */
+function pendingSince(live, dataThrough){
+  if(!live || !/^\d{4}-\d{2}-\d{2}$/.test(String(dataThrough||""))) return null;
+  let sum = 0, seen = false;
+  for(const [k,v] of Object.entries(live)){
+    const m = k.match(/^jotform_d_(\d{4}-\d{2}-\d{2})$/);
+    if(!m) continue;
+    seen = true;
+    if(m[1] > dataThrough) sum += v;   // ISO date strings compare correctly as strings
+  }
+  return seen ? sum : null;
 }
 
 function showError(msg){
@@ -478,17 +503,18 @@ Promise.allSettled([
   }
   // Confirmed-customer feed: member count, onboarding batches, cart split, referral count,
   // drop-off switchers, channel mix, zip member counts. Silently keeps the baked values on failure.
-  let feedLive=false, staleDays=null;
+  let feedLive=false, staleDays=null, dataThrough=null;
   if(feedRes.status==="fulfilled" && feedRes.value){
     const f=applyCustomerFeed(feedRes.value, JOTFORM_INSIGHTS, ZIPS);
     if(f){
       MASTER=f.master; MASTER_TOTAL=f.masterTotal;
       JOTFORM_INSIGHTS=f.insights; ZIPS=f.zips;
-      feedLive=true; staleDays=f.staleDays;
+      feedLive=true; staleDays=f.staleDays; dataThrough=f.scalars.data_through;
     }
   }
-  render(rows, live, feedLive);
-  showStaleness(feedLive, staleDays);
+  const pending = pendingSince(live, dataThrough);
+  render(rows, live, feedLive, pending);
+  showStaleness(feedLive, staleDays, pending);
 });
 </script>
 </body>

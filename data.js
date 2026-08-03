@@ -1,7 +1,7 @@
 /* Shared data for the Road to 1,600 dashboard (index.html) AND the website counter (embed.html).
 
    ⭐ AS OF 2026-07-28 THIS FILE IS MOSTLY A FALLBACK.
-   The member count, onboarding batches, cart split, referral count, drop-off switcher count
+   The member count, weekly signup batches, cart split, referral count, drop-off switcher count
    and channel mix are now fetched live from the "Dashboard Feed" tab of
    "Maggie's Master Confirmed Customer List" (published to web as CSV — aggregate counts only,
    never names, emails or addresses). The baked values below are the last-known-good snapshot:
@@ -28,8 +28,10 @@ const CUSTOMER_FEED_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQqBE
 const GOAL = 1600;
 const BASELINE = 213;             // verified July 1, 2026
 
-// FALLBACK ONLY — live values come from the feed (scalar master_total + type=batch rows).
-// Last hand-verified 2026-07-28: 254 confirmed accounts (CCC 1–254) across 15 Wednesday batches.
+// FALLBACK ONLY — live values come from the feed (scalars + type=batch rows).
+// Last hand-verified 2026-07-28: 254 confirmed accounts (CCC 1–254) across 15 Wednesday
+// onboarding batches. (The LIVE feed now sends signups per Wed–Tue week instead; this baked
+// snapshot keeps the old onboarding shape and is only shown if the feed is unreachable.)
 let MASTER = {
   asOf: "Jul 28",
   batches: [
@@ -120,10 +122,11 @@ function applyCustomerFeed(rows, insights, zips){
   const total = Math.max(org, prov);
   if(total <= 0) return null;   // feed present but unusable
 
-  // Batch labels are "M.D.YY" strings from the Location Notes onboarding stamp (e.g. "mh 7.22.26").
-  // Sorted chronologically and shown verbatim — the stamp IS the batch date, so no adjustment
-  // is applied. (Most batches land on a Wednesday; a couple don't, and inventing an offset
-  // to force them onto Wednesdays would misstate the data.)
+  // Batch labels are "M.D.YY" strings. AS OF 2026-08-03 they are Wednesday WEEK-STARTS:
+  // the feed buckets the Organized Sheet's Submission Dates into Wed→Tue weeks (Omaha's
+  // weekly convention), so every one of Brent's ~2-day pastes updates the timeline with no
+  // team step. (Before this they were onboarding-batch stamps scraped from Customer Upload
+  // col P — that tab is no longer read for the timeline; weeks with zero signups don't appear.)
   batches.sort((a,b) => batchDate(a.raw) - batchDate(b.raw));
   const master = {
     asOf: scalars.data_through ? shortDate(scalars.data_through) :MASTER.asOf,
