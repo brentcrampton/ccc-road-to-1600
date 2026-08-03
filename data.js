@@ -187,3 +187,72 @@ function fetchCustomerFeed(parse){
     .then(t => parse(t))
     .catch(() => null);
 }
+
+/* ============================================================
+   ROUTE WEIGHTS — "Curbside Compost Club — Weekly Collection Tracker"
+   ============================================================ */
+// That tracker sheet (ID 15DyVOoaXXJonL4ZX_PJBrkUVp2aYGRt1YgxPvEQEpJQ), first tab,
+// published to web as CSV. Columns: Date | Locations | Total Weight (lbs) | Avg Lbs/House | notes.
+// ⚠ EMPTY until Brent publishes that tab (File → Share → Publish to web → select the tab → CSV)
+// and pastes the URL here. While empty or unreachable, the dashboard renders the baked
+// WEIGHTS_BAKED snapshot below and labels it with its as-of date.
+// If the team later adds "Route Hours" / "Route Miles" / "Missed Stops" columns per collection
+// day, parseWeightRows picks them up by header name automatically — no code change.
+const WEIGHTS_CSV_URL = "";
+
+// FALLBACK ONLY — hand snapshot of the tracker read 2026-08-03 (data through Jul 6).
+// Note: the sheet's first three rows carry 2025 year-typos (program launched Apr 15, 2026);
+// they are corrected to 2026 here, and Brent should fix the three cells in the sheet itself.
+const WEIGHTS_BAKED = {
+  asOf: "Jul 6",
+  days: [
+    {d:"4/27/2026",stops:61, lbs:2380},{d:"5/4/2026", stops:91, lbs:4840},{d:"5/11/2026",stops:113,lbs:3180},
+    {d:"5/18/2026",stops:56, lbs:1500},{d:"5/19/2026",stops:74, lbs:1760},{d:"5/26/2026",stops:62, lbs:1960},
+    {d:"6/1/2026", stops:46, lbs:1800},{d:"6/2/2026", stops:101,lbs:2360},{d:"6/8/2026", stops:74, lbs:2560},
+    {d:"6/9/2026", stops:105,lbs:2600},{d:"6/15/2026",stops:79, lbs:2880},{d:"6/16/2026",stops:88, lbs:3400},
+    {d:"6/22/2026",stops:70, lbs:3300},{d:"6/23/2026",stops:91, lbs:2380},{d:"6/24/2026",stops:36, lbs:2400},
+    {d:"6/29/2026",stops:88, lbs:2460},{d:"6/30/2026",stops:92, lbs:2300},{d:"7/6/2026", stops:93, lbs:2400}
+  ]
+};
+
+// Parsed-CSV rows → {days:[{d:Date, stops, lbs, hours?, miles?}], asOf} or null if unusable.
+// Header-driven: finds the row whose cells include "date" and a "weight" column, so the
+// tracker's merged title rows and the TOTALS footer are skipped naturally (their first cell
+// isn't a parseable date). Blank future rows are skipped because weight is empty.
+function parseWeightRows(rows){
+  if(!rows || !rows.length) return null;
+  const hi = rows.findIndex(r =>
+    r.some(c => /^date$/i.test(String(c).trim())) &&
+    r.some(c => /weight/i.test(String(c))));
+  if(hi < 0) return null;
+  const head = rows[hi].map(h => String(h).trim().toLowerCase());
+  const col = re => head.findIndex(h => re.test(h));
+  const iD = col(/^date$/), iS = col(/location|stop|house/), iW = col(/weight/);
+  const iH = col(/hour/), iM = col(/mile/), iX = col(/miss/);
+  if(iD < 0 || iW < 0) return null;
+  const wnum = v => { const n = parseFloat(String(v).replace(/[$,\s]/g,"")); return isNaN(n) ? null : n; };
+  const days = [];
+  for(const r of rows.slice(hi + 1)){
+    const d = new Date(String(r[iD] || "").trim());
+    const lbs = wnum(r[iW]);
+    if(isNaN(d.getTime()) || lbs === null || lbs <= 0) continue;
+    const day = { d, lbs, stops: iS >= 0 ? wnum(r[iS]) : null };
+    if(iH >= 0){ const v = wnum(r[iH]); if(v !== null) day.hours = v; }
+    if(iM >= 0){ const v = wnum(r[iM]); if(v !== null) day.miles = v; }
+    if(iX >= 0){ const v = wnum(r[iX]); if(v !== null) day.missed = v; }
+    days.push(day);
+  }
+  if(!days.length) return null;
+  days.sort((a,b) => a.d - b.d);
+  const last = days[days.length - 1].d;
+  return { days, asOf: last.toLocaleDateString("en-US",{month:"short",day:"numeric"}) };
+}
+
+// Fetch helper mirroring fetchCustomerFeed: parsed weights or null, never throws.
+function fetchWeights(parse){
+  if(!WEIGHTS_CSV_URL) return Promise.resolve(null);
+  return fetch(WEIGHTS_CSV_URL, { cache: "no-store" })
+    .then(r => { if(!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
+    .then(t => parseWeightRows(parse(t)))
+    .catch(() => null);
+}
