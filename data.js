@@ -198,7 +198,9 @@ function fetchCustomerFeed(parse){
 // WEIGHTS_BAKED snapshot below and labels it with its as-of date.
 // If the team later adds "Route Hours" / "Route Miles" / "Missed Stops" columns per collection
 // day, parseWeightRows picks them up by header name automatically — no code change.
-const WEIGHTS_CSV_URL = "";
+// Published 2026-08-04 (Adelaide) / Aug 3 Omaha. Verified: anonymous fetch from the dashboard
+// origin returns the tracker CSV. The sheet's three 2025 year-typos were fixed the same day.
+const WEIGHTS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQpXfTl89Y6n_DIL1i6KZML1wcVLWaFyoaUlxbhPBZBJKi9HMhJeVczIDZjHwF0S3oug-9ikhn2jmYY/pub?gid=719908864&single=true&output=csv";
 
 // FALLBACK ONLY — hand snapshot of the tracker read 2026-08-03 (data through Jul 6).
 // Note: the sheet's first three rows carry 2025 year-typos (program launched Apr 15, 2026);
