@@ -264,7 +264,7 @@ function omahaToday(){
 function fmtDate(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
 function daysBetween(a,b){ return Math.max(0, Math.round((b-a)/86400000)); }
 
-function render(rows, live, feedLive, pending){
+function render(rows, live, feedLive, pending, zipTable){
   const header = rows[0].map(h=>h.trim());
   const data = rows.slice(1).filter(r=>r.some(c=>c.trim()!==""));
   const idx = name => header.findIndex(h=>h.toLowerCase()===name.toLowerCase());
@@ -371,10 +371,17 @@ function render(rows, live, feedLive, pending){
       <div class="cartlegend">${JI.carts.map(c=>`${c.label}: ${c.n}`).join(" · ")}</div>
     </div>`;
 
-  // Where the demand lives — zip table
+  // Where the demand lives — zip table (live union when the per-zip counts are published,
+  // baked Jul 18 snapshot otherwise)
+  const zrows = zipTable ? zipTable.rows : ZIPS;
+  if(zipTable){
+    const hot = zrows.slice(0,5).filter(z=>z.w>=10).map(z=>z.zip);
+    document.getElementById("zipNote").textContent =
+      `By zip code: confirmed members vs. website-form interest — raw submissions (repeat entries included), live counts refreshed on every page load. Sorted by waitlist — a big waitlist with few members marks the next zones to open${hot.length?`: ${hot.join(", ")}`:""}. Another ${zipTable.otherW} waitlist and ${zipTable.otherQ} qualified submissions sit in one-off or out-of-metro zips not shown.`;
+  }
   document.getElementById("zipTable").innerHTML = `<table>
     <thead><tr><th>Zip</th><th>Members</th><th>Qualified leads</th><th>Waitlist</th></tr></thead>
-    <tbody>${ZIPS.map(z=>`<tr${z.w>=15?' style="background:#fdf3ec"':''}><td>${esc(z.zip)}</td><td>${z.m||"·"}</td><td>${z.q||"·"}</td><td>${z.w||"·"}</td></tr>`).join("")}</tbody>
+    <tbody>${zrows.map(z=>`<tr${z.w>=15?' style="background:#fdf3ec"':''}><td>${esc(z.zip)}</td><td>${z.m||"·"}</td><td>${z.q||"·"}</td><td>${z.w||"·"}</td></tr>`).join("")}</tbody>
   </table>`;
 
   // One timeline: onboarding batches from the master list, then logged weeks from the tracker (blue)
@@ -464,6 +471,31 @@ function showStaleness(feedLive, staleDays, pending){
     percentages as a floor until the next export lands.`;
 }
 
+/* Live per-zip demand table. The Live counts tab publishes zip_q_XXXXX / zip_w_XXXXX rows
+   (raw qualified/waitlist form submissions per zip, counts only — added 2026-08-03, replacing
+   the hand-tallied Jul 18 snapshot). Members per zip come from the confirmed-customer feed.
+   Table = union of all three, sorted by waitlist; zips with fewer than 3 total entries are
+   rolled into an "elsewhere" remainder so out-of-metro one-offs don't flood the table.
+   Returns null when the per-zip rows aren't present, so the baked ZIPS snapshot still renders. */
+function buildZipTable(live, zipMembers){
+  if(!live) return null;
+  const q = {}, w = {};
+  let seen = false, m;
+  for(const [k,v] of Object.entries(live)){
+    if((m = k.match(/^zip_q_(\d{5})$/)))      { q[m[1]] = v; seen = true; }
+    else if((m = k.match(/^zip_w_(\d{5})$/))) { w[m[1]] = v; seen = true; }
+  }
+  if(!seen) return null;
+  const zips = new Set([...Object.keys(q), ...Object.keys(w), ...Object.keys(zipMembers || {})]);
+  const rows = [...zips].map(z => ({ zip:z, m:(zipMembers && zipMembers[z]) || 0, q:q[z] || 0, w:w[z] || 0 }));
+  rows.sort((a,b) => b.w - a.w || b.q - a.q || b.m - a.m);
+  const shown = rows.filter(r => r.m + r.q + r.w >= 3).slice(0, 18);
+  const inTable = new Set(shown.map(r => r.zip));
+  let otherW = 0, otherQ = 0;
+  rows.forEach(r => { if(!inTable.has(r.zip)){ otherW += r.w; otherQ += r.q; } });
+  return { rows: shown, otherW, otherQ };
+}
+
 /* Signups sitting in Jotform NEWER than the newest row on the confirmed-customer sheet.
    Counted from the hourly jotform_d_YYYY-MM-DD rows in the Live counts tab — written by the
    same timestamps-only script as the weekly Jotform card; encrypted answers are never read.
@@ -503,17 +535,19 @@ Promise.allSettled([
   }
   // Confirmed-customer feed: member count, onboarding batches, cart split, referral count,
   // drop-off switchers, channel mix, zip member counts. Silently keeps the baked values on failure.
-  let feedLive=false, staleDays=null, dataThrough=null;
+  let feedLive=false, staleDays=null, dataThrough=null, zipMembers=null;
   if(feedRes.status==="fulfilled" && feedRes.value){
     const f=applyCustomerFeed(feedRes.value, JOTFORM_INSIGHTS, ZIPS);
     if(f){
       MASTER=f.master; MASTER_TOTAL=f.masterTotal;
       JOTFORM_INSIGHTS=f.insights; ZIPS=f.zips;
       feedLive=true; staleDays=f.staleDays; dataThrough=f.scalars.data_through;
+      zipMembers=f.zipMembers;
     }
   }
   const pending = pendingSince(live, dataThrough);
-  render(rows, live, feedLive, pending);
+  const zipTable = buildZipTable(live, zipMembers);
+  render(rows, live, feedLive, pending, zipTable);
   showStaleness(feedLive, staleDays, pending);
 });
 </script>

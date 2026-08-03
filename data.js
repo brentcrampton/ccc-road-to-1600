@@ -173,7 +173,10 @@ function applyCustomerFeed(rows, insights, zips){
     staleDays = Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate()) - then)/86400000);
   }
 
-  return { master, masterTotal: total, insights: newInsights, zips: newZips, scalars, staleDays };
+  // zipMembers is exposed raw as well: since 2026-08-03 index.html crosses it with the live
+  // per-zip qualified/waitlist counts (zip_q_/zip_w_ rows in the Live counts tab) to build
+  // the demand table as a union of zips, instead of refreshing the baked Jul 18 row set.
+  return { master, masterTotal: total, insights: newInsights, zips: newZips, zipMembers, scalars, staleDays };
 }
 
 // Shared fetch helper — resolves to parsed rows, or null on any failure (never throws).
