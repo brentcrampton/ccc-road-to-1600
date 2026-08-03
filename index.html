@@ -106,6 +106,13 @@
   .error-state{background:#fff;border-left:6px solid var(--tiger);border-radius:10px;padding:18px 22px;font-size:.85rem;margin-top:24px}
   .stale-state{background:#fdf3ec;border-left:6px solid var(--earthy);border-radius:10px;padding:14px 18px;font-size:.82rem;margin:18px 0 0;color:#5d4622}
 
+  /* Tiny source links under each section — deliberately quiet. They open the team's Google
+     Sheets, which are permission-gated: outsiders on this public page get Google's
+     "request access" screen, never the data. */
+  .src{font-size:.6rem;margin-top:8px;text-align:right;opacity:.5}
+  .src a{color:var(--grass);text-decoration:none}
+  .src a:hover{text-decoration:underline}
+  .hero .src a{color:var(--pale)}
   footer{margin-top:56px;font-size:.7rem;color:var(--grass);border-top:1px solid var(--pale);padding-top:14px}
   @media(max-width:640px){.ch-row{grid-template-columns:1fr;gap:4px}.ch-nums{text-align:left}}
 </style>
@@ -136,6 +143,7 @@
         <div class="progress-fill" id="progressFill" style="width:0%">0%</div>
       </div>
       <div class="progress-marks"><span id="baselineMark"></span><span>1,600</span></div>
+      <div class="src"><a href="https://docs.google.com/spreadsheets/d/1NkxZKYy2t58E3jyPrInA8HpLb_VYXH7IploaumN_W_0/edit" target="_blank" rel="noopener">source: customer list</a> · <a href="https://docs.google.com/spreadsheets/d/1HvVikyeHvqL6SIxsmXC5mtfUuG0KiNlkKOUzEBBkRgM/edit" target="_blank" rel="noopener">tracker</a></div>
     </section>
   </div>
 </div>
@@ -147,6 +155,7 @@
     <h2>The pools: who could join next</h2>
     <div class="note">Everyone below wants in but isn't a member yet — anyone who has since joined under the same email is automatically removed. A small number who joined under a different email (~12 households as of Jul 18) may still be counted here. Updated <span id="poolsAsOf"></span>.</div>
     <div class="pools" id="pools"></div>
+    <div class="src"><a href="https://docs.google.com/spreadsheets/d/1g70eT45h8ps9nCOsAe9ANo171MxHecNhrhlG9c37eLE/edit" target="_blank" rel="noopener">source: signups + waitlist sheet</a></div>
   </section>
 
   <section>
@@ -154,24 +163,28 @@
     <div class="note" id="tellusNote"></div>
     <div id="staleNote"></div>
     <div class="tellus" id="tellus"></div>
+    <div class="src"><a href="https://docs.google.com/spreadsheets/d/1NkxZKYy2t58E3jyPrInA8HpLb_VYXH7IploaumN_W_0/edit" target="_blank" rel="noopener">source: customer list</a></div>
   </section>
 
   <section>
     <h2>Where the demand lives</h2>
     <div class="note" id="zipNote">By zip code: confirmed members vs. website-form interest (raw submissions, live sheet counts as of Jul 18). Sorted by waitlist — big waitlist with few members marks the next zones to open: 68164, 68144, 68154, 68135, 68137. Another ~90 waitlist entries are outside the metro or one-offs.</div>
     <div class="table-scroll" id="zipTable"></div>
+    <div class="src"><a href="https://docs.google.com/spreadsheets/d/1g70eT45h8ps9nCOsAe9ANo171MxHecNhrhlG9c37eLE/edit" target="_blank" rel="noopener">source: signups + waitlist sheet</a> · <a href="https://docs.google.com/spreadsheets/d/1NkxZKYy2t58E3jyPrInA8HpLb_VYXH7IploaumN_W_0/edit" target="_blank" rel="noopener">customer list</a></div>
   </section>
 
   <section>
     <h2>Signups by week</h2>
     <div class="note" id="batchNote"></div>
     <div class="batch-chart" id="batchChart"></div>
+    <div class="src"><a href="https://docs.google.com/spreadsheets/d/1NkxZKYy2t58E3jyPrInA8HpLb_VYXH7IploaumN_W_0/edit" target="_blank" rel="noopener">source: customer list</a></div>
   </section>
 
   <section>
     <h2>Where signups are coming from</h2>
     <div class="note" id="channelNote"></div>
     <div class="channels" id="channels"></div>
+    <div class="src"><a href="https://docs.google.com/spreadsheets/d/1NkxZKYy2t58E3jyPrInA8HpLb_VYXH7IploaumN_W_0/edit" target="_blank" rel="noopener">source: customer list</a></div>
   </section>
 
   <section>
@@ -179,6 +192,7 @@
     <div class="note" id="weightsNote"></div>
     <div class="cards cards2" id="weightCards"></div>
     <div class="batch-chart" id="weightChart"></div>
+    <div class="src"><a href="https://docs.google.com/spreadsheets/d/15DyVOoaXXJonL4ZX_PJBrkUVp2aYGRt1YgxPvEQEpJQ/edit" target="_blank" rel="noopener">source: weekly collection tracker</a></div>
   </section>
 
 
