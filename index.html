@@ -174,6 +174,13 @@
     <div class="channels" id="channels"></div>
   </section>
 
+  <section>
+    <h2>What members have kept out of the landfill</h2>
+    <div class="note" id="weightsNote"></div>
+    <div class="cards cards2" id="weightCards"></div>
+    <div class="batch-chart" id="weightChart"></div>
+  </section>
+
 
   <footer>
     Pulls live from the Road_to_1600 tracker each time this page opens (published data can take a few minutes to refresh after an edit).
@@ -377,7 +384,7 @@ function render(rows, live, feedLive, pending, zipTable){
   if(zipTable){
     const hot = zrows.slice(0,5).filter(z=>z.w>=10).map(z=>z.zip);
     document.getElementById("zipNote").textContent =
-      `By zip code: confirmed members vs. website-form interest — raw submissions (repeat entries included), live counts refreshed on every page load. Sorted by waitlist — a big waitlist with few members marks the next zones to open${hot.length?`: ${hot.join(", ")}`:""}. Another ${zipTable.otherW} waitlist and ${zipTable.otherQ} qualified submissions sit in one-off or out-of-metro zips not shown.`;
+      `By zip code: confirmed members vs. website-form interest — raw submissions (repeat entries included), live counts refreshed on every page load. Sorted by waitlist — a big waitlist with few members marks the next zones to open${hot.length?`: ${hot.join(", ")}`:""}. Another ${zipTable.otherW} waitlist and ${zipTable.otherQ} qualified submissions sit in smaller or out-of-metro zips not shown.`;
   }
   document.getElementById("zipTable").innerHTML = `<table>
     <thead><tr><th>Zip</th><th>Members</th><th>Qualified leads</th><th>Waitlist</th></tr></thead>
@@ -488,8 +495,13 @@ function buildZipTable(live, zipMembers){
   if(!seen) return null;
   const zips = new Set([...Object.keys(q), ...Object.keys(w), ...Object.keys(zipMembers || {})]);
   const rows = [...zips].map(z => ({ zip:z, m:(zipMembers && zipMembers[z]) || 0, q:q[z] || 0, w:w[z] || 0 }));
-  rows.sort((a,b) => b.w - a.w || b.q - a.q || b.m - a.m);
-  const shown = rows.filter(r => r.m + r.q + r.w >= 3).slice(0, 18);
+  // Pick the 18 rows by TOTAL activity (members + qualified + waitlist), then display them
+  // sorted by waitlist. Selecting by waitlist alone silently dropped serviced zips with huge
+  // qualified counts (68104 had 130 qualified and no seat at the table) into the remainder line.
+  const eligible = rows.filter(r => r.m + r.q + r.w >= 3);
+  eligible.sort((a,b) => (b.m+b.q+b.w) - (a.m+a.q+a.w));
+  const shown = eligible.slice(0, 18);
+  shown.sort((a,b) => b.w - a.w || b.q - a.q || b.m - a.m);
   const inTable = new Set(shown.map(r => r.zip));
   let otherW = 0, otherQ = 0;
   rows.forEach(r => { if(!inTable.has(r.zip)){ otherW += r.w; otherQ += r.q; } });
@@ -513,6 +525,65 @@ function pendingSince(live, dataThrough){
   return seen ? sum : null;
 }
 
+/* Route weights → "What members have kept out of the landfill".
+   Live from the published Weekly Collection Tracker when WEIGHTS_CSV_URL is set (data.js);
+   otherwise the baked snapshot, honestly labeled. Collection days are grouped into
+   Monday-start weeks because the routes run early-week. If the tracker gains
+   "Route Hours" / "Route Miles" columns, two extra tiles appear automatically. */
+function renderWeights(weights, memberTotal){
+  const liveW = !!weights;
+  if(!weights){
+    weights = { asOf: WEIGHTS_BAKED.asOf,
+      days: WEIGHTS_BAKED.days.map(x => ({ ...x, d: new Date(x.d) })) };
+  }
+  const days = weights.days;
+  const totalLbs = days.reduce((s,x) => s + x.lbs, 0);
+  const totalStops = days.reduce((s,x) => s + (x.stops || 0), 0);
+
+  // Bucket collection days into Monday-start weeks
+  const weeks = new Map();
+  for(const x of days){
+    const mon = new Date(x.d);
+    mon.setDate(mon.getDate() - (mon.getDay() + 6) % 7);
+    const k = mon.toISOString().slice(0,10);
+    if(!weeks.has(k)) weeks.set(k, { mon, lbs: 0, hours: 0, miles: 0, nH: 0, nM: 0 });
+    const w = weeks.get(k);
+    w.lbs += x.lbs;
+    if("hours" in x){ w.hours += x.hours; w.nH++; }
+    if("miles" in x){ w.miles += x.miles; w.nM++; }
+  }
+  const wk = [...weeks.values()].sort((a,b) => a.mon - b.mon);
+  const last4 = wk.slice(-4);
+  const avgWeekLbs = last4.reduce((s,w) => s + w.lbs, 0) / Math.max(last4.length, 1);
+  const latest = wk[wk.length - 1];
+  const perHouse = memberTotal > 0 ? avgWeekLbs / memberTotal : null;
+  const tonsYr = avgWeekLbs * 52 / 2000;
+
+  const hasHours = days.some(x => "hours" in x), hasMiles = days.some(x => "miles" in x);
+  const avgOf = key => { const v = days.filter(x => key in x); return v.reduce((s,x) => s + x[key], 0) / Math.max(v.length, 1); };
+
+  document.getElementById("weightCards").innerHTML = `
+    <div class="card hot"><div class="label">Kept out of the landfill</div><div class="big">${(totalLbs/2000).toFixed(1)} tons</div><div class="sub">${totalLbs.toLocaleString()} lbs of food scraps + compostable organics since the route weights began</div></div>
+    <div class="card"><div class="label">Latest week</div><div class="big">${latest.lbs.toLocaleString()}</div><div class="sub">lbs collected, week of ${fmtDate(latest.mon)}</div></div>
+    <div class="card"><div class="label">Per stop</div><div class="big">${totalStops > 0 ? (totalLbs/totalStops).toFixed(1) : "—"}</div><div class="sub">avg lbs per pickup</div></div>
+    ${perHouse !== null ? `<div class="card"><div class="label">Per member household</div><div class="big">~${perHouse.toFixed(0)}</div><div class="sub">lbs per week, recent 4-week average across all ${memberTotal.toLocaleString()} members</div></div>` : ""}
+    <div class="card"><div class="label">Yearly pace</div><div class="big">~${Math.round(tonsYr)}</div><div class="sub">tons/year at the recent collection rate — before the next route is added</div></div>
+    ${hasHours ? `<div class="card"><div class="label">Route hours</div><div class="big">${avgOf("hours").toFixed(1)}</div><div class="sub">avg per collection day</div></div>` : ""}
+    ${hasMiles ? `<div class="card"><div class="label">Route miles</div><div class="big">${avgOf("miles").toFixed(0)}</div><div class="sub">avg per collection day</div></div>` : ""}`;
+
+  const maxW = Math.max(...wk.map(w => w.lbs));
+  document.getElementById("weightChart").innerHTML = wk.map(w => `
+    <div class="batch-col">
+      <div class="batch-count">${(w.lbs/1000).toFixed(1)}k</div>
+      <div class="batch-bar" style="height:${Math.max(w.lbs/maxW*100, 3)}%"></div>
+      <div class="batch-week">${fmtDate(w.mon)}</div>
+    </div>`).join("");
+
+  document.getElementById("weightsNote").textContent = liveW
+    ? `Pounds weighed in at Soil Dynamics Composting Farm per route week, live from the weekly collection tracker (through ${weights.asOf}). Carts hold food scraps plus compostable plant material, and not every household sets out every week. Bars are Monday-start route weeks in thousands of lbs.`
+    : `Pounds weighed in at Soil Dynamics Composting Farm per route week — last saved snapshot, data through ${weights.asOf}. Carts hold food scraps plus compostable plant material, and not every household sets out every week. Bars are Monday-start route weeks in thousands of lbs.`;
+}
+
 function showError(msg){
   document.getElementById("updated").textContent="Couldn't load live data";
   document.getElementById("cards").insertAdjacentHTML("beforebegin",
@@ -522,8 +593,9 @@ function showError(msg){
 Promise.allSettled([
   fetch(SHEET_CSV_URL,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); }),
   fetch(LIVE_COUNTS_CSV,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); }),
-  fetchCustomerFeed(parseCSV)
-]).then(([weekly, liveRes, feedRes])=>{
+  fetchCustomerFeed(parseCSV),
+  fetchWeights(parseCSV)
+]).then(([weekly, liveRes, feedRes, weightsRes])=>{
   if(weekly.status!=="fulfilled"){ showError(weekly.reason.message); return; }
   const rows=parseCSV(weekly.value);
   if(!rows.length||rows[0].length<3){ showError("Unexpected sheet format"); return; }
@@ -549,6 +621,9 @@ Promise.allSettled([
   const zipTable = buildZipTable(live, zipMembers);
   render(rows, live, feedLive, pending, zipTable);
   showStaleness(feedLive, staleDays, pending);
+  // Route weights: live tracker feed when published, baked snapshot otherwise.
+  // MASTER_TOTAL is already the live member count here (feed applied above).
+  renderWeights(weightsRes.status === "fulfilled" ? weightsRes.value : null, MASTER_TOTAL);
 });
 </script>
 </body>
