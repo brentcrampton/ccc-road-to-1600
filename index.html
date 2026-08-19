@@ -95,13 +95,19 @@
   .cartlegend{font-size:.72rem;color:var(--grass);margin-top:6px}
   @media(max-width:760px){.tellus{grid-template-columns:1fr}}
   .batch-col.logged .batch-bar{background:var(--gem)}
-  .batch-chart{display:flex;align-items:flex-end;gap:6px;height:190px;background:#fff;border-radius:14px;padding:18px 18px 8px;box-shadow:0 6px 18px rgba(15,58,35,.08)}
-  .batch-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
-  .batch-count{font-family:'Catamaran',sans-serif;font-weight:800;font-size:.72rem;margin-bottom:2px}
-  .batch-bar{width:100%;max-width:44px;background:var(--grass);border-radius:6px 6px 0 0;transition:height .9s ease}
+  /* Bars must be TRUE TO SCALE. The bar's height:% resolves against .batch-track, which is
+     a positioned box of its own — not the whole column. (It used to resolve against the
+     column height including the label rows, so flexbox shrank tall bars more than short
+     ones and the top of the range visually flatlined.) */
+  .batch-chart{display:flex;align-items:flex-end;gap:6px;height:230px;background:#fff;border-radius:14px;padding:18px 18px 10px;box-shadow:0 6px 18px rgba(15,58,35,.08)}
+  .batch-col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;min-width:0}
+  .batch-track{position:relative;flex:1 1 auto;width:100%;min-height:0}
+  .batch-count{position:absolute;left:50%;transform:translateX(-50%);bottom:100%;margin-bottom:3px;font-family:'Catamaran',sans-serif;font-weight:800;font-size:.72rem;white-space:nowrap}
+  .batch-bar{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:44px;background:var(--grass);border-radius:6px 6px 0 0;transition:height .9s ease}
   .batch-col.launch .batch-bar{background:var(--earthy)}
   .batch-col:last-child .batch-bar{background:var(--tiger)}
-  .batch-week{font-size:.6rem;color:var(--grass);margin-top:5px;white-space:nowrap;transform:rotate(-38deg);transform-origin:top center;height:26px}
+  /* margin-top clears the rotated label's top-right corner, which swings up ~14px */
+  .batch-week{font-size:.6rem;color:var(--grass);margin-top:16px;white-space:nowrap;transform:rotate(-38deg);transform-origin:top center;height:26px;flex:none}
   .empty-state{background:#fff;border:2px dashed var(--pale);border-radius:14px;padding:28px;text-align:center;color:var(--grass);font-size:.85rem}
   .error-state{background:#fff;border-left:6px solid var(--tiger);border-radius:10px;padding:18px 22px;font-size:.85rem;margin-top:24px}
   .stale-state{background:#fdf3ec;border-left:6px solid var(--earthy);border-radius:10px;padding:14px 18px;font-size:.82rem;margin:18px 0 0;color:#5d4622}
@@ -282,6 +288,10 @@ function omahaToday(){
     .format(new Date()).split("-");
   return new Date(+p[0], +p[1]-1, +p[2]);
 }
+// Tallest bar tops out at this % of its track, leaving headroom for the value label
+// above it. Every bar scales by the SAME factor, so the chart stays true to scale.
+const BAR_MAX_PCT = 88;
+
 function fmtDate(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
 function daysBetween(a,b){ return Math.max(0, Math.round((b-a)/86400000)); }
 
@@ -423,8 +433,9 @@ function render(rows, live, feedLive, pending, zipTable){
     : `Green bars are confirmed members per Wednesday onboarding batch (last saved snapshot, ${MASTER.asOf}); blue bars are weeks logged in the tracker as they happen.`;
   document.getElementById("batchChart").innerHTML = timeline.map(b=>`
     <div class="batch-col${b.launch?" launch":""}${b.logged?" logged":""}">
-      <div class="batch-count">${b.n}</div>
-      <div class="batch-bar" style="height:${Math.max(b.n/maxBatch*100,3)}%"></div>
+      <div class="batch-track">
+        <div class="batch-bar" style="height:${Math.max(b.n/maxBatch*BAR_MAX_PCT,2)}%"><div class="batch-count">${b.n}</div></div>
+      </div>
       <div class="batch-week">${esc(b.week)}</div>
     </div>`).join("");
 
@@ -557,8 +568,9 @@ function renderWeights(){
   const maxW = Math.max(...s.wk.map(w => w.est));
   document.getElementById("weightChart").innerHTML = s.wk.map(w => `
     <div class="batch-col" title="${w.weighed ? "Weighed on the scale" : "Estimated from " + w.stops + " pickups"}">
-      <div class="batch-count">${(w.est/1000).toFixed(1)}k</div>
-      <div class="batch-bar" style="height:${Math.max(w.est/maxW*100, 3)}%;${w.weighed ? "" : "opacity:.55"}"></div>
+      <div class="batch-track">
+        <div class="batch-bar" style="height:${Math.max(w.est/maxW*BAR_MAX_PCT, 2)}%;${w.weighed ? "" : "opacity:.55"}"><div class="batch-count">${(w.est/1000).toFixed(1)}k</div></div>
+      </div>
       <div class="batch-week">${fmtDate(w.mon)}</div>
     </div>`).join("");
 
