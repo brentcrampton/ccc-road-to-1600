@@ -192,7 +192,7 @@
     <div class="note" id="weightsNote"></div>
     <div class="cards cards2" id="weightCards"></div>
     <div class="batch-chart" id="weightChart"></div>
-    <div class="src"><a href="https://docs.google.com/spreadsheets/d/15DyVOoaXXJonL4ZX_PJBrkUVp2aYGRt1YgxPvEQEpJQ/edit" target="_blank" rel="noopener">source: weekly collection tracker</a></div>
+    <div class="src"><a href="https://airtable.com/app5xT5W9Osockx3j/tblROMIvXZWvHZsFD" target="_blank" rel="noopener">source: Soil Dynamics load log (Airtable) + pre-June collection tracker</a></div>
   </section>
 
 
@@ -540,62 +540,34 @@ function pendingSince(live, dataThrough){
 }
 
 /* Route weights → "What members have kept out of the landfill".
-   Live from the published Weekly Collection Tracker when WEIGHTS_CSV_URL is set (data.js);
-   otherwise the baked snapshot, honestly labeled. Collection days are grouped into
-   Monday-start weeks because the routes run early-week. If the tracker gains
-   "Route Hours" / "Route Miles" columns, two extra tiles appear automatically. */
-function renderWeights(weights, memberTotal){
-  const liveW = !!weights;
-  if(!weights){
-    weights = { asOf: WEIGHTS_BAKED.asOf,
-      days: WEIGHTS_BAKED.days.map(x => ({ ...x, d: new Date(x.d) })) };
-  }
-  const days = weights.days;
-  const totalLbs = days.reduce((s,x) => s + x.lbs, 0);
-  const totalStops = days.reduce((s,x) => s + (x.stops || 0), 0);
-
-  // Bucket collection days into Monday-start weeks
-  const weeks = new Map();
-  for(const x of days){
-    const mon = new Date(x.d);
-    mon.setDate(mon.getDate() - (mon.getDay() + 6) % 7);
-    const k = mon.toISOString().slice(0,10);
-    if(!weeks.has(k)) weeks.set(k, { mon, lbs: 0, hours: 0, miles: 0, nH: 0, nM: 0 });
-    const w = weeks.get(k);
-    w.lbs += x.lbs;
-    if("hours" in x){ w.hours += x.hours; w.nH++; }
-    if("miles" in x){ w.miles += x.miles; w.nM++; }
-  }
-  const wk = [...weeks.values()].sort((a,b) => a.mon - b.mon);
-  const last4 = wk.slice(-4);
-  const avgWeekLbs = last4.reduce((s,w) => s + w.lbs, 0) / Math.max(last4.length, 1);
-  const latest = wk[wk.length - 1];
-  const perHouse = memberTotal > 0 ? avgWeekLbs / memberTotal : null;
-  const tonsYr = avgWeekLbs * 52 / 2000;
-
-  const hasHours = days.some(x => "hours" in x), hasMiles = days.some(x => "miles" in x);
-  const avgOf = key => { const v = days.filter(x => key in x); return v.reduce((s,x) => s + x[key], 0) / Math.max(v.length, 1); };
+   Weighing is a SAMPLE: the team scale-tickets about one route week a month, and
+   logs a home count on every other collection day. So the average lbs-per-pickup is
+   measured, and the totals are that average projected across every logged pickup.
+   Data lives in WEIGHT_DAYS (data.js), refreshed monthly from Airtable on the 18th. */
+function renderWeights(){
+  const s = weightStats(WEIGHT_DAYS);
+  if(!s.wk.length) return;
 
   document.getElementById("weightCards").innerHTML = `
-    <div class="card hot"><div class="label">Kept out of the landfill</div><div class="big">${(totalLbs/2000).toFixed(1)} tons</div><div class="sub">${totalLbs.toLocaleString()} lbs of food scraps + compostable organics since the route weights began</div></div>
-    <div class="card"><div class="label">Latest week</div><div class="big">${latest.lbs.toLocaleString()}</div><div class="sub">lbs collected, week of ${fmtDate(latest.mon)}</div></div>
-    <div class="card"><div class="label">Per stop</div><div class="big">${totalStops > 0 ? (totalLbs/totalStops).toFixed(1) : "—"}</div><div class="sub">avg lbs per pickup</div></div>
-    ${perHouse !== null ? `<div class="card"><div class="label">Per member household</div><div class="big">~${perHouse.toFixed(0)}</div><div class="sub">lbs per week, recent 4-week average across all ${memberTotal.toLocaleString()} members</div></div>` : ""}
-    <div class="card"><div class="label">Yearly pace</div><div class="big">~${Math.round(tonsYr)}</div><div class="sub">tons/year at the recent collection rate — before the next route is added</div></div>
-    ${hasHours ? `<div class="card"><div class="label">Route hours</div><div class="big">${avgOf("hours").toFixed(1)}</div><div class="sub">avg per collection day</div></div>` : ""}
-    ${hasMiles ? `<div class="card"><div class="label">Route miles</div><div class="big">${avgOf("miles").toFixed(0)}</div><div class="sub">avg per collection day</div></div>` : ""}`;
+    <div class="card hot"><div class="label">Kept out of the landfill</div><div class="big">${(s.projectedLbs/2000).toFixed(0)} tons</div><div class="sub">about ${(Math.round(s.projectedLbs/100)*100).toLocaleString()} lbs of food scraps and yard material since the first pickup in April</div></div>
+    <div class="card"><div class="label">Per pickup</div><div class="big">${s.perStop.toFixed(1)} lbs</div><div class="sub">what one cart weighs when it gets collected &mdash; weighed on the scale across ${s.sampleDays} sample collection days</div></div>
+    <div class="card"><div class="label">Pickups so far</div><div class="big">${s.totalStops.toLocaleString()}</div><div class="sub">carts collected since April, counted on every route day</div></div>
+    <div class="card"><div class="label">Yearly pace</div><div class="big">~${Math.round(s.tonsYr)} tons</div><div class="sub">per year at the last four weeks&rsquo; collection rate, before the next route is added</div></div>`;
 
-  const maxW = Math.max(...wk.map(w => w.lbs));
-  document.getElementById("weightChart").innerHTML = wk.map(w => `
-    <div class="batch-col">
-      <div class="batch-count">${(w.lbs/1000).toFixed(1)}k</div>
-      <div class="batch-bar" style="height:${Math.max(w.lbs/maxW*100, 3)}%"></div>
+  const maxW = Math.max(...s.wk.map(w => w.est));
+  document.getElementById("weightChart").innerHTML = s.wk.map(w => `
+    <div class="batch-col" title="${w.weighed ? "Weighed on the scale" : "Estimated from " + w.stops + " pickups"}">
+      <div class="batch-count">${(w.est/1000).toFixed(1)}k</div>
+      <div class="batch-bar" style="height:${Math.max(w.est/maxW*100, 3)}%;${w.weighed ? "" : "opacity:.55"}"></div>
       <div class="batch-week">${fmtDate(w.mon)}</div>
     </div>`).join("");
 
-  document.getElementById("weightsNote").textContent = liveW
-    ? `Pounds weighed in at Soil Dynamics Composting Farm per route week, live from the weekly collection tracker (through ${weights.asOf}). Carts hold food scraps plus compostable plant material, and not every household sets out every week. Bars are Monday-start route weeks in thousands of lbs.`
-    : `Pounds weighed in at Soil Dynamics Composting Farm per route week — last saved snapshot, data through ${weights.asOf}. Carts hold food scraps plus compostable plant material, and not every household sets out every week. Bars are Monday-start route weeks in thousands of lbs.`;
+  document.getElementById("weightsNote").innerHTML =
+    `Pounds of food scraps and yard material dropped at Soil Dynamics Composting Farm, through ${s.asOf}. ` +
+    `The truck gets weighed on the scale about one route week a month &mdash; those weeks set the average of ` +
+    `<b>${s.perStop.toFixed(1)} lbs per pickup</b> (${s.measuredLbs.toLocaleString()} lbs over ${s.measuredStops.toLocaleString()} weighed pickups). ` +
+    `Every other week is counted, not weighed, so its bar is estimated at that same rate and shown faded. ` +
+    `Bars are Monday-start route weeks in thousands of lbs.`;
 }
 
 function showError(msg){
@@ -635,10 +607,11 @@ Promise.allSettled([
   const zipTable = buildZipTable(live, zipMembers);
   render(rows, live, feedLive, pending, zipTable);
   showStaleness(feedLive, staleDays, pending);
-  // Route weights: live tracker feed when published, baked snapshot otherwise.
-  // MASTER_TOTAL is already the live member count here (feed applied above).
-  renderWeights(weightsRes.status === "fulfilled" ? weightsRes.value : null, MASTER_TOTAL);
 });
+
+// Route weights need no network — WEIGHT_DAYS is baked in data.js and refreshed monthly
+// from Airtable. Rendered outside the fetch chain so a tracker outage can't blank it.
+renderWeights();
 </script>
 </body>
 </html>

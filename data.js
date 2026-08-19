@@ -189,72 +189,92 @@ function fetchCustomerFeed(parse){
 }
 
 /* ============================================================
-   ROUTE WEIGHTS — "Curbside Compost Club — Weekly Collection Tracker"
+   ROUTE WEIGHTS — live from Airtable "Soil Dynamics Load Log"
    ============================================================ */
-// That tracker sheet (ID 15DyVOoaXXJonL4ZX_PJBrkUVp2aYGRt1YgxPvEQEpJQ), first tab,
-// published to web as CSV. Columns: Date | Locations | Total Weight (lbs) | Avg Lbs/House | notes.
-// ⚠ EMPTY until Brent publishes that tab (File → Share → Publish to web → select the tab → CSV)
-// and pastes the URL here. While empty or unreachable, the dashboard renders the baked
-// WEIGHTS_BAKED snapshot below and labels it with its as-of date.
-// If the team later adds "Route Hours" / "Route Miles" / "Missed Stops" columns per collection
-// day, parseWeightRows picks them up by header name automatically — no code change.
-// Published 2026-08-04 (Adelaide) / Aug 3 Omaha. Verified: anonymous fetch from the dashboard
-// origin returns the tracker CSV. The sheet's three 2025 year-typos were fixed the same day.
-const WEIGHTS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQpXfTl89Y6n_DIL1i6KZML1wcVLWaFyoaUlxbhPBZBJKi9HMhJeVczIDZjHwF0S3oug-9ikhn2jmYY/pub?gid=719908864&single=true&output=csv";
+// SOURCE OF TRUTH (changed 2026-08-19): Airtable base app5xT5W9Osockx3j, table
+// "Loads" (tblROMIvXZWvHZsFD). Rows where Material = "Food/Yard CCC"
+// (choice selkyCFdrpQCRjaec). Weight = "Scale Ticket Net Weight (lbs)"
+// (fldQtUraZuPNZ1gYt); stops = "Homes picked up" (fldZB0lVusOoXtWoB).
+//
+// Airtable has no public read URL, so the dashboard cannot fetch it in the browser.
+// Instead WEIGHT_DAYS below is refreshed by the monthly "CCC weights — Airtable pull"
+// scheduled task (18th of each month, Omaha time), which rewrites this array and
+// redeploys. Rows dated before 6/1/2026 are the pre-Airtable history from the old
+// Google "Weekly Collection Tracker" and must be preserved on every refresh.
+//
+// The old published-CSV feed is retired: the tracker sheet stops at 7/6 and would
+// overwrite richer Airtable data. Left blank deliberately — do not repopulate.
+const WEIGHTS_CSV_URL = "";
 
-// FALLBACK ONLY — hand snapshot of the tracker read 2026-08-03 (data through Jul 6).
-// Note: the sheet's first three rows carry 2025 year-typos (program launched Apr 15, 2026);
-// they are corrected to 2026 here, and Brent should fix the three cells in the sheet itself.
-const WEIGHTS_BAKED = {
-  asOf: "Jul 6",
-  days: [
-    {d:"4/27/2026",stops:61, lbs:2380},{d:"5/4/2026", stops:91, lbs:4840},{d:"5/11/2026",stops:113,lbs:3180},
-    {d:"5/18/2026",stops:56, lbs:1500},{d:"5/19/2026",stops:74, lbs:1760},{d:"5/26/2026",stops:62, lbs:1960},
-    {d:"6/1/2026", stops:46, lbs:1800},{d:"6/2/2026", stops:101,lbs:2360},{d:"6/8/2026", stops:74, lbs:2560},
-    {d:"6/9/2026", stops:105,lbs:2600},{d:"6/15/2026",stops:79, lbs:2880},{d:"6/16/2026",stops:88, lbs:3400},
-    {d:"6/22/2026",stops:70, lbs:3300},{d:"6/23/2026",stops:91, lbs:2380},{d:"6/24/2026",stops:36, lbs:2400},
-    {d:"6/29/2026",stops:88, lbs:2460},{d:"6/30/2026",stops:92, lbs:2300},{d:"7/6/2026", stops:93, lbs:2400}
-  ]
-};
+// WEIGHING IS A SAMPLE, NOT A CENSUS. The team scale-tickets roughly one route week
+// a month; every other collection day is logged with a home count but no weight.
+// So: lbs === null means "collected, not weighed" (NOT zero). Loads entered at 0 lbs
+// with a "No ticket" note are stored as null here for the same reason.
+// Totals are therefore PROJECTED: every logged stop x the measured average lbs/stop.
+// stops === null means the day was weighed but the home count was never entered.
+const WEIGHT_DAYS = [
+    {d:"4/27/2026",stops:61,lbs:2380},{d:"5/4/2026",stops:91,lbs:4840},{d:"5/11/2026",stops:113,lbs:3180},
+    {d:"5/18/2026",stops:56,lbs:1500},{d:"5/19/2026",stops:74,lbs:1760},{d:"5/26/2026",stops:62,lbs:1960},
+    {d:"6/1/2026",stops:46,lbs:1800},{d:"6/2/2026",stops:101,lbs:2360},{d:"6/8/2026",stops:74,lbs:2560},
+    {d:"6/9/2026",stops:105,lbs:2600},{d:"6/15/2026",stops:79,lbs:2880},{d:"6/16/2026",stops:88,lbs:3400},
+    {d:"6/22/2026",stops:70,lbs:3300},{d:"6/23/2026",stops:91,lbs:2380},{d:"6/24/2026",stops:36,lbs:2400},
+    {d:"6/29/2026",stops:88,lbs:2460},{d:"6/30/2026",stops:92,lbs:2300},{d:"7/1/2026",stops:null,lbs:1120},
+    {d:"7/6/2026",stops:93,lbs:2400},{d:"7/7/2026",stops:null,lbs:2220},{d:"7/8/2026",stops:null,lbs:1080},
+    {d:"7/13/2026",stops:99,lbs:null},{d:"7/14/2026",stops:105,lbs:null},{d:"7/15/2026",stops:43,lbs:null},
+    {d:"7/20/2026",stops:89,lbs:null},{d:"7/21/2026",stops:105,lbs:null},{d:"7/22/2026",stops:44,lbs:null},
+    {d:"7/27/2026",stops:48,lbs:null},{d:"7/28/2026",stops:110,lbs:null},{d:"7/29/2026",stops:47,lbs:null},
+    {d:"7/30/2026",stops:17,lbs:null},{d:"8/3/2026",stops:101,lbs:null},{d:"8/4/2026",stops:114,lbs:null},
+    {d:"8/5/2026",stops:47,lbs:null},{d:"8/6/2026",stops:6,lbs:null},{d:"8/10/2026",stops:99,lbs:3860},
+    {d:"8/11/2026",stops:96,lbs:3500},{d:"8/12/2026",stops:44,lbs:1760},{d:"8/13/2026",stops:11,lbs:500},
+    {d:"8/17/2026",stops:106,lbs:null},{d:"8/18/2026",stops:111,lbs:null}
+];
 
-// Parsed-CSV rows → {days:[{d:Date, stops, lbs, hours?, miles?}], asOf} or null if unusable.
-// Header-driven: finds the row whose cells include "date" and a "weight" column, so the
-// tracker's merged title rows and the TOTALS footer are skipped naturally (their first cell
-// isn't a parseable date). Blank future rows are skipped because weight is empty.
-function parseWeightRows(rows){
-  if(!rows || !rows.length) return null;
-  const hi = rows.findIndex(r =>
-    r.some(c => /^date$/i.test(String(c).trim())) &&
-    r.some(c => /weight/i.test(String(c))));
-  if(hi < 0) return null;
-  const head = rows[hi].map(h => String(h).trim().toLowerCase());
-  const col = re => head.findIndex(h => re.test(h));
-  const iD = col(/^date$/), iS = col(/location|stop|house/), iW = col(/weight/);
-  const iH = col(/hour/), iM = col(/mile/), iX = col(/miss/);
-  if(iD < 0 || iW < 0) return null;
-  const wnum = v => { const n = parseFloat(String(v).replace(/[$,\s]/g,"")); return isNaN(n) ? null : n; };
-  const days = [];
-  for(const r of rows.slice(hi + 1)){
-    const d = new Date(String(r[iD] || "").trim());
-    const lbs = wnum(r[iW]);
-    if(isNaN(d.getTime()) || lbs === null || lbs <= 0) continue;
-    const day = { d, lbs, stops: iS >= 0 ? wnum(r[iS]) : null };
-    if(iH >= 0){ const v = wnum(r[iH]); if(v !== null) day.hours = v; }
-    if(iM >= 0){ const v = wnum(r[iM]); if(v !== null) day.miles = v; }
-    if(iX >= 0){ const v = wnum(r[iX]); if(v !== null) day.missed = v; }
-    days.push(day);
+// Pre-6/1/2026 rows came from the retired Google tracker; kept so launch-to-date
+// tracking survives the move to Airtable.
+const WEIGHTS_PRE_AIRTABLE_THROUGH = "5/26/2026";
+const WEIGHTS_AS_OF = "Aug 18, 2026";
+
+// Back-compat shim: older code paths referenced WEIGHTS_BAKED / fetchWeights.
+const WEIGHTS_BAKED = { asOf: WEIGHTS_AS_OF, days: WEIGHT_DAYS };
+function fetchWeights(){ return Promise.resolve(null); }
+
+// Rolls WEIGHT_DAYS into the numbers the dashboard shows.
+// measuredLbs / measuredStops come ONLY from days that have both a weight and a
+// stop count, so the average is never diluted by unweighed or uncounted days.
+function weightStats(days){
+  const rows = days.map(x => ({ ...x, dt: new Date(x.d) })).sort((a,b) => a.dt - b.dt);
+  const sampled = rows.filter(x => x.lbs > 0 && x.stops > 0);
+  const measuredLbs   = sampled.reduce((s,x) => s + x.lbs, 0);
+  const measuredStops = sampled.reduce((s,x) => s + x.stops, 0);
+  const perStop = measuredStops > 0 ? measuredLbs / measuredStops : 0;
+  const totalStops = rows.reduce((s,x) => s + (x.stops || 0), 0);
+  // A few days were weighed but never got a home count. Their pounds are real, so add
+  // them on top of the stop-based projection instead of losing them.
+  const orphanLbs = rows.filter(x => x.lbs > 0 && !(x.stops > 0))
+                        .reduce((s,x) => s + x.lbs, 0);
+  const projectedLbs = totalStops * perStop + orphanLbs;
+
+  // Monday-start route weeks. Each week gets projected lbs (stops x perStop) and a
+  // flag for whether any of its days were actually weighed.
+  const weeks = new Map();
+  for(const x of rows){
+    const mon = new Date(x.dt);
+    mon.setDate(mon.getDate() - (mon.getDay() + 6) % 7);
+    const k = mon.toISOString().slice(0,10);
+    if(!weeks.has(k)) weeks.set(k, { mon, stops: 0, lbs: 0, weighed: false });
+    const w = weeks.get(k);
+    w.stops += x.stops || 0;
+    if(x.lbs > 0){ w.lbs += x.lbs; w.weighed = true; }
   }
-  if(!days.length) return null;
-  days.sort((a,b) => a.d - b.d);
-  const last = days[days.length - 1].d;
-  return { days, asOf: last.toLocaleDateString("en-US",{month:"short",day:"numeric"}) };
-}
+  const wk = [...weeks.values()].sort((a,b) => a.mon - b.mon)
+    // Never show a week as lighter than what actually crossed the scale.
+    .map(w => ({ ...w, est: Math.max(w.stops * perStop, w.lbs) }));
+  const last4 = wk.slice(-4);
+  const avgWeekLbs = last4.reduce((s,w) => s + w.est, 0) / Math.max(last4.length, 1);
 
-// Fetch helper mirroring fetchCustomerFeed: parsed weights or null, never throws.
-function fetchWeights(parse){
-  if(!WEIGHTS_CSV_URL) return Promise.resolve(null);
-  return fetch(WEIGHTS_CSV_URL, { cache: "no-store" })
-    .then(r => { if(!r.ok) throw new Error("HTTP " + r.status); return r.text(); })
-    .then(t => parseWeightRows(parse(t)))
-    .catch(() => null);
+  return {
+    rows, wk, perStop, totalStops, projectedLbs, measuredLbs, measuredStops,
+    sampleDays: sampled.length, avgWeekLbs, tonsYr: avgWeekLbs * 52 / 2000,
+    asOf: WEIGHTS_AS_OF
+  };
 }
