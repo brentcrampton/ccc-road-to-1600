@@ -59,18 +59,27 @@ function normaliseCart(label){
 
 // "Where did you first hear about this program?" is free text on the form, so it gets
 // keyword-bucketed into the SAME channel names the target ranges already use.
-// Returns null on purpose for referral and drop-off answers: those two levers are counted
-// from their own dedicated columns (Referred / existing DCC?), and adding the free-text
-// answers on top would credit the same person to the same lever twice.
+// Rebuilt 2026-08-31 against all 38 distinct answers on file. Order matters: the newsletter
+// test runs before the news test ("newsletter" contains "news"), and the cart/bin test runs
+// before the neighbour test ("saw a cart in my neighborhood" is a sighting, not a referral).
+// Returns null on purpose for three groups:
+//   - referral and drop-off answers, counted from their own columns (Referred / existing DCC?),
+//     so crediting the free text too would count the same person against the same lever twice;
+//   - bare "facebook" / "social media", which could be the paid ad or the neighbourhood group.
+//     Crediting them to ads would flatter the paid number, so they stay unattributed.
 function bucketChannel(label){
-  const s = String(label).toLowerCase();
-  if(/facebook|instagram|\bads?\b|ad on|social media/.test(s))                              return "Meta ads";
-  if(/drop.?off|current (compost club|member)|compost club m|already a member|already using/.test(s)) return null;
-  if(/hillside email|newsletter|eco.?club/.test(s))                                          return "Other";
-  if(/news|paper|podcast|article|press|radio|\btv\b/.test(s))                                return "Press / podcast";
-  if(/booth|dundee days|earth day|event|\btalk\b|fair|market/.test(s))                       return "Speaking";
-  if(/search|online|google|website|internet/.test(s))                                        return "Other";
-  if(/friend|neighbo|word of mouth|know you|daughter|\bson\b|family|cart|truck|\bcan\b|sign/.test(s)) return "Organic / WOM";
+  const s = String(label).toLowerCase().replace(/[\u2018\u2019\u02BC]/g, "'");
+  if(/^\s*(facebook|social media)\s*$/.test(s))                                              return null;
+  if(/drop[\s-]?off|current (compost club|member)|compost club m|already a member|already using/.test(s)) return null;
+  if(/newsletter|e-?mail/.test(s))                                                           return "Hillside email";
+  if(/\bads?\b|ad on|advertis/.test(s))                                                      return "Meta ads";
+  if(/nextdoor|facebook group|neighborhood group/.test(s))                                    return "Neighborhood groups";
+  if(/news|paper|podcast|article|press|radio|\btv\b/.test(s))                                 return "Press / podcast";
+  if(/search|google|bing|binge|internet|website/.test(s))                                     return "Online search";
+  if(/cart|truck|can in|\bbin\b/.test(s))                                                     return "Cart / truck sighting";
+  if(/booth|event|\btalk\b|fair|festival|days/.test(s))                                       return "Events, booths & talks";
+  if(/soil dynamics|gretna|\bmetro\b/.test(s))                                                return "Sister brands";
+  if(/friend|neighbo|word of mouth|sasha|know you|daughter|\bson\b|family|school|docent|zoo|coworker|floral|hillside/.test(s)) return "Organic / WOM";
   return "Other";
 }
 
@@ -104,7 +113,10 @@ function applyCustomerFeed(rows, insights, zips){
     // into the number 2026, which is how "updated Jul 27" once rendered as "updated 2026".
     const n     = /^-?\d+(\.\d+)?$/.test(raw.replace(/,/g,"")) ? parseFloat(raw.replace(/,/g,"")) : NaN;
     if(!type || !label) continue;
-    if(type === "scalar"){ scalars[label] = isNaN(n) ? raw : n; continue; }
+    // Scalar names are a contract with this file (org_rows, dcc_yes, ...). A find-and-replace
+    // in the sheet formula once appended a "*" to a label, which silently dropped a whole bar
+    // from the page. Trim a trailing "*" so a stray edit degrades to nothing instead.
+    if(type === "scalar"){ scalars[label.replace(/\*+$/, "")] = isNaN(n) ? raw : n; continue; }
     if(isNaN(n)) continue;
     if(type === "batch")        batches.push({ raw: label, n });
     else if(type === "cart")    { const k = normaliseCart(label);  if(k) carts[k]      = (carts[k]      || 0) + n; }

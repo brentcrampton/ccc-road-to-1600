@@ -231,7 +231,7 @@ const POOLS = { asOf:"Jul 18", qualified:242, waitlist:300, both:60 };
 let JOTFORM_INSIGHTS = {
   asOf: "Jul 15", n: 121, answered: 34,
   referred: 38, dropoffSwitchers: 38, dropoffAnswered: 121,
-  channelSeed: {"Referral": 38, "Drop-off email": 38, "Organic / WOM": 16, "Meta ads": 2, "Speaking": 2, "Press / podcast": 1, "Other": 6},
+  channelSeed: {"Referral": 84, "Drop-off email": 56, "Organic / WOM": 50, "Meta ads": 44, "Hillside email": 32, "Press / podcast": 11, "Online search": 8, "Cart / truck sighting": 7, "Neighborhood groups": 4, "Events, booths & talks": 3, "Sister brands": 3},
   carts: [{"label":"35-gallon","n":101},{"label":"65-gallon","n":12},{"label":"95-gallon","n":8}]
 };
 
@@ -247,15 +247,22 @@ let ZIPS = [
 
 // Target ranges from the Source Targets tab (July 7 team brief)
 const TARGETS = {
-  "Referral":        {lo:350, hi:450, label:"Referrals (free month)"},
-  "Qualified email": {lo:30,  hi:50,  label:"Qualified leads re-engaged"},
-  "Waitlist email":  {lo:40,  hi:60,  label:"Waitlist conversions"},
-  "Drop-off email":  {lo:75,  hi:150, label:"Drop-off switchers"},
-  "Organic / WOM":   {lo:150, hi:200, label:"Organic / word of mouth"},
-  "Paid ads":        {lo:500, hi:700, label:"Paid ads (Meta + Google)", combine:["Meta ads","Google ads"]},
-  "Speaking":        {lo:null,hi:null,label:"Public speaking"},
-  "Press / podcast": {lo:null,hi:null,label:"Earned media"},
-  "Other":           {lo:null,hi:null,label:"Other"}
+  "Referral":               {lo:350, hi:450, label:"Referrals (free month)"},
+  "Qualified email":        {lo:30,  hi:50,  label:"Qualified leads re-engaged"},
+  "Waitlist email":         {lo:40,  hi:60,  label:"Waitlist conversions"},
+  "Drop-off email":         {lo:75,  hi:150, label:"Drop-off switchers"},
+  "Organic / WOM":          {lo:150, hi:200, label:"Organic / word of mouth"},
+  "Paid ads":               {lo:500, hi:700, label:"Paid ads (Meta + Google)", combine:["Meta ads","Google ads"]},
+  // Ranges below are PROPOSED (Aug 31 2026), scaled off the current run-rate against the
+  // 1,600 goal. They are placeholders until the team sets real ones - edit freely.
+  "Hillside email":         {lo:150, hi:250, label:"Hillside email"},
+  "Press / podcast":        {lo:40,  hi:70,  label:"Earned media"},
+  "Online search":          {lo:40,  hi:75,  label:"Online search"},
+  "Cart / truck sighting":  {lo:30,  hi:60,  label:"Cart / truck sighting"},
+  "Neighborhood groups":    {lo:40,  hi:80,  label:"Neighborhood groups"},
+  "Events, booths & talks": {lo:25,  hi:50,  label:"Events, booths & talks"},
+  "Sister brands":          {lo:25,  hi:50,  label:"Sister brands (Soil Dynamics, Gretna)"},
+  "Other":                  {lo:null,hi:null,label:"Other"}
 };
 const NON_CHANNEL = ["week ending","total customers","net adds","ad spend ($)","paid cac ($)","waitlist size","qualified pool","funnel completion %","pace target","ahead / behind"];
 
@@ -459,7 +466,7 @@ function render(rows, live, feedLive, pending, zipTable){
   chDiv.innerHTML = rowsHtml.map(r=>r(maxScale)).join("") || `<div class="empty-state">Channel numbers appear once the confirmed-customer feed is reachable.</div>`;
 
   document.getElementById("channelNote").textContent = feedLive
-    ? `Actuals from the confirmed-customer list (${JI.n.toLocaleString()} households, last updated ${JI.asOf}). Referrals come from the Referred column and drop-off switchers from the existing-member column, so both cover everyone. The "where did you first hear about us" question was answered by only ${JI.answered} of ${JI.n.toLocaleString()}, so the remaining bars undercount. Answers are free text, keyword-bucketed into these levers — online-search answers currently land in Other. A member can credit more than one channel: these bars measure each lever's contribution, not a headcount, and should never be summed.`
+    ? `Actuals from the confirmed-customer list (${JI.n.toLocaleString()} households, last updated ${JI.asOf}). Referrals come from the Referred column and drop-off switchers from the existing-member column, so both cover everyone. The "where did you first hear about us" question was answered by ${JI.answered} of ${JI.n.toLocaleString()}, so every other bar undercounts. Answers are free text, sorted into these levers by keyword; a handful that just said "Facebook" are left uncredited rather than guessed at. A member can credit more than one channel: these bars measure each lever's contribution, not a headcount, and should never be summed.`
     : `Actuals from the Jotform signup export (${JI.n.toLocaleString()} members, ${JI.asOf}). The "where did you hear about us" question was answered by ${JI.answered} of ${JI.n.toLocaleString()}, so those bars undercount. A member can credit more than one channel — these bars measure each lever's contribution, not a headcount.`;
 
   document.getElementById("updated").textContent =
