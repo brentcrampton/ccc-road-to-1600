@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>The Road to 1,600 — Curbside Compost Club</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@900&family=Catamaran:wght@800&family=Hepta+Slab:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --earthy:#0F3A23; --grass:#5B7048; --newgreen:#7E9366; --spearmint:#A6B88A;
+    --pale:#D1D7C3; --pulp:#F6F5EF; --tiger:#D16727; --citrus:#CF8729;
+    --gem:#4095AF; --deep:#13344A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--pulp);color:var(--earthy);font-family:'Hepta Slab',Georgia,serif;font-weight:300;line-height:1.5}
+  h1,h2{font-family:'Raleway',sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:.02em}
+  h3{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:.8rem}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 64px}
+
+  .hero{background:var(--earthy);color:var(--pulp);padding:40px 0 48px}
+  .hero .wrap{padding:0 24px}
+  .hero-top{padding-top:0}
+  .logo-row{display:flex;align-items:center;gap:20px;margin-bottom:24px}
+  .logo-lockup{height:56px;width:auto;display:block}
+  .logo-circle{width:84px;height:84px;border-radius:50%;border:2px solid var(--pulp);background:transparent;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+  .logo-circle span{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:.5rem;color:var(--pulp);line-height:1.15;padding:6px}
+  .logo-circle img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+  .kicker{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.14em;font-size:.75rem;color:var(--spearmint);margin-bottom:8px}
+  .hero h1{font-size:clamp(1.8rem,5vw,3rem)}
+  .hero h1 .accent{color:var(--spearmint)}
+  .updated{font-size:.75rem;color:var(--pale);margin-top:10px}
+  .updated .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--spearmint);margin-right:6px;vertical-align:1px}
+  .subline{font-family:'Hepta Slab',Georgia,serif;font-weight:300;font-size:1.05rem;color:var(--pulp);max-width:46em;margin-top:16px;line-height:1.55}
+  .subline a{color:var(--spearmint);text-decoration:underline}
+  .hero-cards{margin-top:32px}
+  .hero-progress{margin-top:36px}
+  .hero-progress section{margin-top:0}
+  .hero-progress section>h2{color:var(--pulp)}
+  .hero-progress section>.note{color:var(--pale)}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px}
+  .cards2{margin-top:44px}
+  .card{background:#fff;color:var(--earthy);border-radius:14px;padding:20px 22px;box-shadow:0 6px 18px rgba(15,58,35,.10)}
+  .card .label{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:.66rem;color:var(--grass)}
+  .card .big{font-family:'Raleway',sans-serif;font-weight:900;font-size:2.2rem;line-height:1.15;margin-top:4px}
+  .card .sub{font-size:.72rem;color:var(--grass);margin-top:4px}
+  .card.hot .big{color:var(--tiger)}
+
+  .badge{display:inline-block;font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:.62rem;color:var(--pulp);border-radius:20px;padding:3px 10px;margin-top:8px}
+  .badge.ok{background:var(--grass)} .badge.warn{background:var(--citrus)} .badge.bad{background:var(--tiger)} .badge.wait{background:var(--gem)}
+
+  section{margin-top:44px}
+  section>h2{font-size:1.15rem;margin-bottom:4px}
+  section>.note{font-size:.78rem;color:var(--grass);margin-bottom:16px}
+
+  .progress-shell{background:var(--pale);border-radius:20px;height:34px;position:relative;overflow:hidden}
+  .progress-fill{background:linear-gradient(90deg,var(--grass),var(--earthy));height:100%;border-radius:20px;min-width:56px;display:flex;align-items:center;justify-content:flex-end;padding-right:12px;color:var(--pulp);font-family:'Catamaran',sans-serif;font-weight:800;font-size:.78rem;transition:width .9s ease}
+  .progress-marks{display:flex;justify-content:space-between;font-size:.7rem;color:var(--grass);margin-top:6px}
+  .nov-mark{position:absolute;top:0;bottom:0;width:2px;background:var(--tiger)}
+  .nov-label{font-size:.7rem;color:var(--tiger);margin-top:2px}
+
+  .channels{display:flex;flex-direction:column;gap:14px}
+  .ch-row{display:grid;grid-template-columns:190px 1fr 120px;gap:14px;align-items:center}
+  .ch-name{font-family:'Catamaran',sans-serif;font-weight:800;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em}
+  .ch-track{background:#fff;border:1px solid var(--pale);border-radius:12px;height:22px;position:relative;overflow:hidden}
+  .ch-target{position:absolute;top:0;bottom:0;background:rgba(166,184,138,.35)}
+  .ch-fill{position:absolute;top:3px;bottom:3px;left:3px;background:var(--tiger);border-radius:9px;min-width:6px;transition:width .9s ease}
+  .ch-nums{font-size:.74rem;color:var(--grass);text-align:right}
+  .ch-nums b{color:var(--earthy);font-weight:600}
+
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 6px 18px rgba(15,58,35,.08);font-size:.78rem}
+  thead th{background:var(--earthy);color:var(--pulp);font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.05em;font-size:.62rem;padding:10px 10px;text-align:right;white-space:nowrap}
+  thead th:first-child{text-align:left}
+  tbody td{padding:8px 10px;text-align:right;border-top:1px solid var(--pale)}
+  tbody td:first-child{text-align:left;font-weight:600;white-space:nowrap}
+  tbody tr.baseline td{color:var(--grass);font-style:italic}
+  tbody tr:hover{background:#fdf9f2}
+  .table-scroll{overflow-x:auto;border-radius:14px}
+
+  .pools{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .pool{background:#fff;border-radius:14px;padding:22px 24px;box-shadow:0 6px 18px rgba(15,58,35,.08);display:flex;align-items:center;gap:18px}
+  .pool .num{font-family:'Raleway',sans-serif;font-weight:900;font-size:2.6rem;color:var(--earthy)}
+  .pool.wait .num{color:var(--gem)}
+  .pool .what{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:.72rem}
+  .pool .how{font-size:.76rem;color:var(--grass);margin-top:3px}
+  @media(max-width:640px){.pools{grid-template-columns:1fr}}
+  .tellus{display:grid;grid-template-columns:1fr 1fr 2fr;gap:16px}
+  .tell{background:#fff;border-radius:14px;padding:22px 24px;box-shadow:0 6px 18px rgba(15,58,35,.08)}
+  .tell .num{font-family:'Raleway',sans-serif;font-weight:900;font-size:2.2rem}
+  .tell .what{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:.7rem;color:var(--grass);margin-top:2px}
+  .cartbar{display:flex;height:30px;border-radius:10px;overflow:hidden;margin-top:10px}
+  .cartbar div{display:flex;align-items:center;justify-content:center;color:var(--pulp);font-family:'Catamaran',sans-serif;font-weight:800;font-size:.68rem;white-space:nowrap}
+  .cartlegend{font-size:.72rem;color:var(--grass);margin-top:6px}
+  @media(max-width:760px){.tellus{grid-template-columns:1fr}}
+  .batch-col.logged .batch-bar{background:var(--gem)}
+  /* Bars must be TRUE TO SCALE. The bar's height:% resolves against .batch-track, which is
+     a positioned box of its own — not the whole column. (It used to resolve against the
+     column height including the label rows, so flexbox shrank tall bars more than short
+     ones and the top of the range visually flatlined.) */
+  .batch-chart{display:flex;align-items:flex-end;gap:6px;height:230px;background:#fff;border-radius:14px;padding:18px 18px 10px;box-shadow:0 6px 18px rgba(15,58,35,.08)}
+  .batch-col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;min-width:0}
+  .batch-track{position:relative;flex:1 1 auto;width:100%;min-height:0}
+  .batch-count{position:absolute;left:50%;transform:translateX(-50%);bottom:100%;margin-bottom:3px;font-family:'Catamaran',sans-serif;font-weight:800;font-size:.72rem;white-space:nowrap}
+  .batch-bar{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:44px;background:var(--grass);border-radius:6px 6px 0 0;transition:height .9s ease}
+  .batch-col.launch .batch-bar{background:var(--earthy)}
+  .batch-col:last-child .batch-bar{background:var(--tiger)}
+  /* margin-top clears the rotated label's top-right corner, which swings up ~14px */
+  .batch-week{font-size:.6rem;color:var(--grass);margin-top:16px;white-space:nowrap;transform:rotate(-38deg);transform-origin:top center;height:26px;flex:none}
+  .empty-state{background:#fff;border:2px dashed var(--pale);border-radius:14px;padding:28px;text-align:center;color:var(--grass);font-size:.85rem}
+  .error-state{background:#fff;border-left:6px solid var(--tiger);border-radius:10px;padding:18px 22px;font-size:.85rem;margin-top:24px}
+  .stale-state{background:#fdf3ec;border-left:6px solid var(--earthy);border-radius:10px;padding:14px 18px;font-size:.82rem;margin:18px 0 0;color:#5d4622}
+
+  /* Tiny source links under each section — deliberately quiet. They open the team's Google
+     Sheets, which are permission-gated: outsiders on this public page get Google's
+     "request access" screen, never the data. */
+  .src{font-size:.6rem;margin-top:8px;text-align:right;opacity:.5}
+  .src a{color:var(--grass);text-decoration:none}
+  .src a:hover{text-decoration:underline}
+  .hero .src a{color:var(--pale)}
+  footer{margin-top:56px;font-size:.7rem;color:var(--grass);border-top:1px solid var(--pale);padding-top:14px}
+  @media(max-width:640px){.ch-row{grid-template-columns:1fr;gap:4px}.ch-nums{text-align:left}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap hero-top">
+    <!-- LOGO PLACEHOLDER: replace src when logos provided -->
+    <div class="logo-row">
+      <div class="logo-circle"><img src="logo-hillside.svg" alt="Hillside Solutions"></div>
+      <img class="logo-lockup" src="logo-ccc-lockup.svg" alt="Curbside Compost Club">
+    </div>
+    <h1>The Road to <span class="accent">1,600</span></h1>
+    <div class="updated"><span class="dot"></span><span id="updated">Loading live numbers from the tracker…</span></div>
+    <p class="subline">Help Omaha make history by having the fastest-growing residential composting program in the country (outside of a pandemic year) by getting to 1,600 signups by December 31st. See if we're in your area or join the waitlist at <a href="https://www.hillside.solutions/compostclub/curbside">www.hillside.solutions/curbside</a>.</p>
+  </div>
+
+  <div class="wrap hero-cards">
+    <div class="cards" id="cards"></div>
+  </div>
+
+  <div class="wrap hero-progress">
+    <section>
+      <h2>Progress to goal</h2>
+      <div class="note">1,600 total members by Dec 31, 2026.</div>
+      <div class="progress-shell" id="progressShell">
+        <div class="progress-fill" id="progressFill" style="width:0%">0%</div>
+      </div>
+      <div class="progress-marks"><span id="baselineMark"></span><span>1,600</span></div>
+      <div class="src"><a href="https://docs.google.com/spreadsheets/d/1NkxZKYy2t58E3jyPrInA8HpLb_VYXH7IploaumN_W_0/edit" target="_blank" rel="noopener">source: customer list</a> · <a href="https://docs.google.com/spreadsheets/d/1HvVikyeHvqL6SIxsmXC5mtfUuG0KiNlkKOUzEBBkRgM/edit" target="_blank" rel="noopener">tracker</a></div>
+    </section>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="cards cards2" id="cards2"></div>
+
+  <section>
+    <h2>The pools: who could join next</h2>
+    <div class="note">Everyone below wants in but isn't a member yet — anyone who has since joined under the same email is automatically removed. A small number who joined under a different email (~12 households as of Jul 18) may still be counted here. Updated <span id="poolsAsOf"></span>.</div>
+    <div class="pools" id="pools"></div>
+    <div class="src"><a href="https://docs.google.com/spreadsheets/d/1g70eT45h8ps9nCOsAe9ANo171MxHecNhrhlG9c37eLE/edit" target="_blank" rel="noopener">source: signups + waitlist sheet</a></div>
+  </section>
+
+  <section>
+    <h2>What signups tell us</h2>
+    <div class="note" id="tellusNote"></div>
+    <div id="staleNote"></div>
+    <div class="tellus" id="tellus"></div>
+    <div class="src"><a href="https://docs.google.com/spreadsheets/d/1NkxZKYy2t58E3jyPrInA8HpLb_VYXH7IploaumN_W_0/edit" target="_blank" rel="noopener">source: customer list</a></div>
+  </section>
+
+  <section>
+    <h2>Where the demand lives</h2>
+    <div class="note" id="zipNote">By zip code: confirmed members vs. website-form interest (raw submissions, live sheet counts as of Jul 18). Sorted by waitlist — big waitlist with few members marks the next zones to open: 68164, 68144, 68154, 68135, 68137. Another ~90 waitlist entries are outside the metro or one-offs.</div>
+    <div class="table-scroll" id="zipTable"></div>
+    <div class="src"><a href="https://docs.google.com/spreadsheets/d/1g70eT45h8ps9nCOsAe9ANo171MxHecNhrhlG9c37eLE/edit" target="_blank" rel="noopener">source: signups + waitlist sheet</a> · <a href="https://docs.google.com/spreadsheets/d/1NkxZKYy2t58E3jyPrInA8HpLb_VYXH7IploaumN_W_0/edit" target="_blank" rel="noopener">customer list</a></div>
+  </section>
+
+  <section>
+    <h2>Signups by week</h2>
+    <div class="note" id="batchNote"></div>
+    <div class="batch-chart" id="batchChart"></div>
+    <div class="src"><a href="https://docs.google.com/spreadsheets/d/1NkxZKYy2t58E3jyPrInA8HpLb_VYXH7IploaumN_W_0/edit" target="_blank" rel="noopener">source: customer list</a></div>
+  </section>
+
+  <section>
+    <h2>Where signups are coming from</h2>
+    <div class="note" id="channelNote"></div>
+    <div class="channels" id="channels"></div>
+    <div class="src"><a href="https://docs.google.com/spreadsheets/d/1NkxZKYy2t58E3jyPrInA8HpLb_VYXH7IploaumN_W_0/edit" target="_blank" rel="noopener">source: customer list</a></div>
+  </section>
+
+  <section>
+    <h2>What members have kept out of the landfill</h2>
+    <div class="note" id="weightsNote"></div>
+    <div class="cards cards2" id="weightCards"></div>
+    <div class="batch-chart" id="weightChart"></div>
+    <div class="src"><a href="https://airtable.com/app5xT5W9Osockx3j/tblROMIvXZWvHZsFD" target="_blank" rel="noopener">source: Soil Dynamics load log (Airtable) + pre-June collection tracker</a></div>
+  </section>
+
+
+  <footer>
+    Pulls live from the Road_to_1600 tracker each time this page opens (published data can take a few minutes to refresh after an edit).
+    Baseline: 213 verified members on July 1, 2026. Questions → Brent.
+  </footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+/* ====== CONFIG ====== */
+// SHEET_CSV_URL, GOAL, BASELINE, MASTER and MASTER_TOTAL now live in data.js,
+// shared with embed.html (the counter on hillside.solutions). Weekly member-count
+// updates happen in data.js — not here.
+// "Live counts" tab of the intake sheet (fed by the Vercel intake widget on hillside.solutions/compostclub/curbside,
+// NOT by Jotform — Jotform signups only reach the master list via Maggie's weekly update). Aggregate numbers only, no personal data.
+const LIVE_COUNTS_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ7nHubVwjBcd2AFXjIvGVCI78Rfi1tiBu6X2hh8V2yKyTmfpESBLyTUxEz6SzbN91vFPHmhjl8w4p8/pub?gid=952458942&single=true&output=csv";
+const BASELINE_DATE = new Date(2026, 6, 1);
+const DEADLINE = new Date(2026, 11, 31);
+
+// Lead pools, counted from the CCC Signups + Waitlist sheet (updated with the master list each week).
+// Unique emails only (raw rows contain duplicates); verified by email match that neither pool
+// contains anyone already on the confirmed-customer list. `both` = people on both lists.
+const POOLS = { asOf:"Jul 18", qualified:242, waitlist:300, both:60 };
+
+// FALLBACK ONLY. Live values now come from the "Dashboard Feed" tab of the confirmed-customer
+// sheet (see CUSTOMER_FEED_CSV in data.js), which covers 232 confirmed households instead of
+// the 121 in this old Jotform export. Kept so the page still renders if the feed is unreachable.
+let JOTFORM_INSIGHTS = {
+  asOf: "Jul 15", n: 121, answered: 34,
+  referred: 38, dropoffSwitchers: 38, dropoffAnswered: 121,
+  channelSeed: {"Referral": 38, "Drop-off email": 38, "Organic / WOM": 16, "Meta ads": 2, "Speaking": 2, "Press / podcast": 1, "Other": 6},
+  carts: [{"label":"35-gallon","n":101},{"label":"65-gallon","n":12},{"label":"95-gallon","n":8}]
+};
+
+// Zip demand: Members refreshed from the customer feed; qualified/waitlist = intake-form submissions (raw), Jul 18
+let ZIPS = [
+ {zip:"68164",m:5,q:8,w:24},{zip:"68144",m:4,q:5,w:23},{zip:"68154",m:2,q:0,w:20},
+ {zip:"68114",m:12,q:37,w:15},{zip:"68135",m:0,q:0,w:12},{zip:"68137",m:0,q:0,w:11},
+ {zip:"68124",m:24,q:35,w:11},{zip:"68112",m:0,q:2,w:10},{zip:"68152",m:1,q:0,w:10},
+ {zip:"68116",m:0,q:0,w:9},{zip:"68127",m:0,q:0,w:9},{zip:"68130",m:1,q:0,w:9},
+ {zip:"68132",m:26,q:41,w:0},{zip:"68104",m:17,q:57,w:3},{zip:"68106",m:10,q:27,w:0},
+ {zip:"68105",m:6,q:26,w:0},{zip:"68134",m:6,q:26,w:7},{zip:"68131",m:5,q:16,w:0}
+];
+
+// Target ranges from the Source Targets tab (July 7 team brief)
+const TARGETS = {
+  "Referral":        {lo:350, hi:450, label:"Referrals (free month)"},
+  "Qualified email": {lo:30,  hi:50,  label:"Qualified leads re-engaged"},
+  "Waitlist email":  {lo:40,  hi:60,  label:"Waitlist conversions"},
+  "Drop-off email":  {lo:75,  hi:150, label:"Drop-off switchers"},
+  "Organic / WOM":   {lo:150, hi:200, label:"Organic / word of mouth"},
+  "Paid ads":        {lo:500, hi:700, label:"Paid ads (Meta + Google)", combine:["Meta ads","Google ads"]},
+  "Speaking":        {lo:null,hi:null,label:"Public speaking"},
+  "Press / podcast": {lo:null,hi:null,label:"Earned media"},
+  "Other":           {lo:null,hi:null,label:"Other"}
+};
+const NON_CHANNEL = ["week ending","total customers","net adds","ad spend ($)","paid cac ($)","waitlist size","qualified pool","funnel completion %","pace target","ahead / behind"];
+
+/* ====== CSV PARSER (handles quoted fields) ====== */
+function parseCSV(text){
+  const rows=[]; let row=[], cell="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(cell); cell=""; }
+    else if(c==='\n'){ row.push(cell); rows.push(row); row=[]; cell=""; }
+    else if(c!=='\r') cell+=c;
+  }
+  if(cell!==""||row.length){ row.push(cell); rows.push(row); }
+  return rows;
+}
+const num = v => { const n=parseFloat(String(v).replace(/[$,%\s]/g,"")); return isNaN(n)?null:n; };
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const parseWeekDate = s => { const d=new Date(s); return isNaN(d)?null:d; };
+
+/* ====== RENDER ====== */
+/* This page is read by the Omaha team but edited from Adelaide, and the browser renders dates in
+   whatever timezone the VIEWER is in — so the same page showed two different "loaded" times and
+   could disagree by a calendar day on the countdown. Everything user-facing is pinned to Omaha. */
+const OMAHA = "America/Chicago";
+// "now", expressed as an Omaha calendar date, so days-left never differs by viewer.
+function omahaToday(){
+  const p = new Intl.DateTimeFormat("en-CA",{timeZone:OMAHA,year:"numeric",month:"2-digit",day:"2-digit"})
+    .format(new Date()).split("-");
+  return new Date(+p[0], +p[1]-1, +p[2]);
+}
+// Tallest bar tops out at this % of its track, leaving headroom for the value label
+// above it. Every bar scales by the SAME factor, so the chart stays true to scale.
+const BAR_MAX_PCT = 88;
+
+function fmtDate(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
+function daysBetween(a,b){ return Math.max(0, Math.round((b-a)/86400000)); }
+
+function render(rows, live, feedLive, pending, zipTable){
+  const header = rows[0].map(h=>h.trim());
+  const data = rows.slice(1).filter(r=>r.some(c=>c.trim()!==""));
+  const idx = name => header.findIndex(h=>h.toLowerCase()===name.toLowerCase());
+  const iWeek=idx("Week ending"), iTotal=idx("Total customers"), iNet=idx("Net adds"), iWait=idx("Waitlist size");
+  if(iWeek<0||iTotal<0||iNet<0){ showError("The Weekly Log columns have been renamed — expected \"Week ending\", \"Total customers\", and \"Net adds\"."); return; }
+
+  // Logged weeks = rows with a Total customers or Net adds value (skip the baseline row for pace)
+  const logged = data.filter(r => num(r[iTotal])!==null || num(r[iNet])!==null);
+  const baselineRow = logged.find(r => /baseline/i.test(r[iWeek]||""));
+  const weekRows = logged.filter(r => !/baseline/i.test(r[iWeek]||""));
+
+  // Current total: row with the latest week-ending date that has a total; else baseline + summed net adds
+  let current = BASELINE, foundTotal=false, bestDate=null;
+  for(const r of logged){
+    const t=num(r[iTotal]); if(t===null) continue;
+    const d=parseWeekDate(r[iWeek]);
+    if(bestDate===null || (d!==null && d>=bestDate)){ current=t; foundTotal=true; if(d!==null) bestDate=d; }
+  }
+  if(!foundTotal && weekRows.length){
+    current = BASELINE + weekRows.reduce((s,r)=>s+(num(r[iNet])||0),0);
+  }
+  // Master confirmed-customer list is authoritative when it's ahead of the Weekly Log
+  const usingMaster = MASTER_TOTAL >= current;
+  if(usingMaster) current = MASTER_TOTAL;
+
+  const today = new Date();
+  const daysLeft = daysBetween(omahaToday(), DEADLINE);   // count days in Omaha, not the viewer's zone
+  const weeksLeft = Math.max(daysLeft/7, 0.01);
+  const stillNeeded = Math.max(0, GOAL-current);
+  const neededPerWeek = stillNeeded/weeksLeft;
+
+  // Pace: average net adds across logged weeks; fall back to last 4 onboarding batches from the master list
+  const netAdds = weekRows.map(r=>num(r[iNet])).filter(v=>v!==null);
+  let avgPace = netAdds.length ? netAdds.reduce((a,b)=>a+b,0)/netAdds.length : null;
+  let paceSource = "avg net adds/week";
+  if(avgPace===null && MASTER.batches.length>=4){
+    // Weeks run Wed–Tue, so the newest bucket is usually still in progress and would drag
+    // the average down — pace uses the last 4 COMPLETED weeks.
+    let done = MASTER.batches;
+    const lastD = parseWeekDate(done[done.length-1].week+", 2026");
+    if(lastD!==null && daysBetween(lastD, omahaToday()) < 7) done = done.slice(0,-1);
+    const last4 = done.slice(-4);
+    avgPace = last4.reduce((s,b)=>s+b.n,0)/last4.length;
+    paceSource = "avg of last 4 signup weeks";
+  }
+  const lastWait = (()=>{ let w=null; for(const r of logged){const v=num(r[iWait]); if(v!==null)w=v;} return w; })();
+
+  // Pools: live from the signup feed when available, baked numbers otherwise
+  const pq = live? live.qualified_unique : POOLS.qualified;
+  const pw = live? live.waitlist_unique : POOLS.waitlist;
+  const pb = live? (live.both_lists||0) : POOLS.both;
+  const poolTotal = pq+pw-pb;
+  const poolWhen = live? "live from the website intake form" : `as of ${POOLS.asOf}`;
+
+  // Status badge
+  let badge;
+  if(avgPace===null) badge = `<span class="badge wait">No weeks logged yet</span>`;
+  else if(avgPace >= neededPerWeek) badge = `<span class="badge ok">On pace</span>`;
+  else if(avgPace >= neededPerWeek*0.75) badge = `<span class="badge warn">Close — push the free channels</span>`;
+  else badge = `<span class="badge bad">Behind pace</span>`;
+
+  // Cards (hero: 5 cards)
+  document.getElementById("cards").innerHTML = `
+    <div class="card"><div class="label">Members now</div><div class="big">${current.toLocaleString()}</div><div class="sub">${usingMaster?`confirmed members, ${MASTER.asOf}`:`of ${GOAL.toLocaleString()} goal`}${pending>0?` · <b>+${pending}</b> signed up since, awaiting confirmation`:""}</div></div>
+    <div class="card hot"><div class="label">Still needed</div><div class="big">${stillNeeded===0?"🎉 0":stillNeeded.toLocaleString()}</div><div class="sub">${daysLeft} days left in 2026</div></div>`;
+
+  // Cards (below hero: warm leads + new intake)
+  document.getElementById("cards2").innerHTML = `
+    <div class="card"><div class="label">Needed / week</div><div class="big">${neededPerWeek.toFixed(1)}</div><div class="sub">to hit Dec 31</div></div>
+    <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">${paceSource} ${badge}</div></div>
+    ${live && "jotform_week_wed" in live ? `<div class="card hot"><div class="label">Signed up this week</div><div class="big">${live.jotform_week_wed.toLocaleString()}</div><div class="sub">Jotform since Wed · last week: ${(live.jotform_prev_week??"—")}</div></div>` : ""}
+    <div class="card"><div class="label">Warm leads</div><div class="big">${poolTotal.toLocaleString()}</div><div class="sub">unique people, qualified + waitlist, ${poolWhen}</div></div>
+    ${live && "new_leads_7d" in live ? `<div class="card"><div class="label">New people, last 7 days</div><div class="big">${live.new_leads_7d.toLocaleString()}</div><div class="sub">first-time website form submissions — not payments</div></div>` : ""}`;
+
+  // Progress bar
+  const pct = Math.min(100, current/GOAL*100);
+  const fill=document.getElementById("progressFill");
+  fill.style.width=pct+"%"; fill.textContent=pct.toFixed(1)+"%";
+  document.getElementById("baselineMark").textContent = `Launched Apr 15, 2026`;
+
+  // Pools
+  document.getElementById("poolsAsOf").textContent =
+    `${poolWhen}. Duplicate form submissions removed; ${pb} people appear on both lists and count once in the combined ${poolTotal.toLocaleString()}`;
+  document.getElementById("pools").innerHTML = `
+    <div class="pool"><div class="num">${pq.toLocaleString()}</div>
+      <div><div class="what">Qualified leads</div><div class="how">In-zone address confirmed, never finished payment. Job: re-engagement emails + Sasha's calls.</div></div></div>
+    <div class="pool wait"><div class="num">${pw.toLocaleString()}</div>
+      <div><div class="what">Waitlist</div><div class="how">Outside current service area, waiting for their neighborhood to open. Job: zone-launch countdowns.</div></div></div>`;
+
+  // What signups tell us
+  const JI=JOTFORM_INSIGHTS, cartsTotal=JI.carts.reduce((s,c)=>s+c.n,0);
+  const cartColors=["var(--earthy)","var(--grass)","var(--gem)"];
+  const dccBase = JI.dropoffAnswered || JI.n;
+  const srcLine = feedLive
+    ? `From the confirmed-customer list — ${JI.n.toLocaleString()} households with signup detail on file, refreshed every couple of days (last ${JI.asOf}).`
+    : `From the Jotform signup export — ${JI.n.toLocaleString()} members (updated ${JI.asOf}).`;
+  document.getElementById("tellusNote").textContent =
+    `${srcLine} Guides referral promotion and cart purchasing. The drop-off switcher share is out of the ${dccBase.toLocaleString()} who answered that question.`;
+  document.getElementById("tellus").innerHTML=`
+    <div class="tell"><div class="num">${Math.round(JI.referred/JI.n*100)}%</div><div class="what">named a referrer when signing up</div></div>
+    <div class="tell"><div class="num">${Math.round(JI.dropoffSwitchers/dccBase*100)}%</div><div class="what">switched from Drop-off Compost Club</div></div>
+    <div class="tell"><div class="what" style="margin-top:0">Cart sizes chosen</div>
+      <div class="cartbar">${JI.carts.map((c,i)=>`<div style="width:${(c.n/cartsTotal*100).toFixed(1)}%;background:${cartColors[i%3]}">${Math.round(c.n/cartsTotal*100)}%</div>`).join("")}</div>
+      <div class="cartlegend">${JI.carts.map(c=>`${c.label}: ${c.n}`).join(" · ")}</div>
+    </div>`;
+
+  // Where the demand lives — zip table (live union when the per-zip counts are published,
+  // baked Jul 18 snapshot otherwise)
+  const zrows = zipTable ? zipTable.rows : ZIPS;
+  if(zipTable){
+    const hot = zrows.slice(0,5).filter(z=>z.w>=10).map(z=>z.zip);
+    document.getElementById("zipNote").textContent =
+      `By zip code: confirmed members vs. website-form interest — raw submissions (repeat entries included), live counts refreshed on every page load. Sorted by waitlist — a big waitlist with few members marks the next zones to open${hot.length?`: ${hot.join(", ")}`:""}. Another ${zipTable.otherW} waitlist and ${zipTable.otherQ} qualified submissions sit in smaller or out-of-metro zips not shown.`;
+  }
+  document.getElementById("zipTable").innerHTML = `<table>
+    <thead><tr><th>Zip</th><th>Members</th><th>Qualified leads</th><th>Waitlist</th></tr></thead>
+    <tbody>${zrows.map(z=>`<tr${z.w>=15?' style="background:#fdf3ec"':''}><td>${esc(z.zip)}</td><td>${z.m||"·"}</td><td>${z.q||"·"}</td><td>${z.w||"·"}</td></tr>`).join("")}</tbody>
+  </table>`;
+
+  // One timeline: onboarding batches from the master list, then logged weeks from the tracker (blue)
+  const timeline = MASTER.batches.map(b=>({...b}));
+  const lastBatchDate = new Date(new Date().getFullYear(), 0, 1);
+  MASTER.batches.forEach(b=>{
+    const d=parseWeekDate(b.week+", 2026");
+    if(d!==null && d>lastBatchDate) lastBatchDate.setTime(d.getTime());
+  });
+  weekRows.forEach(r=>{
+    const d=parseWeekDate(r[iWeek]), n=num(r[iNet]);
+    if(d!==null && n!==null && d>lastBatchDate)
+      timeline.push({week:d.toLocaleDateString("en-US",{month:"short",day:"numeric"}), n, logged:true});
+  });
+  const maxBatch = Math.max(...timeline.map(b=>b.n));
+  document.getElementById("batchNote").textContent = feedLive
+    ? `Confirmed signups per week — weeks run Wednesday–Tuesday — from the submission dates on the confirmed-customer list, read live through ${MASTER.asOf}. The newest week is usually still filling, and weeks with zero signups don't draw a bar. Blue bars are weeks logged in the tracker as they happen.`
+    : `Green bars are confirmed members per Wednesday onboarding batch (last saved snapshot, ${MASTER.asOf}); blue bars are weeks logged in the tracker as they happen.`;
+  document.getElementById("batchChart").innerHTML = timeline.map(b=>`
+    <div class="batch-col${b.launch?" launch":""}${b.logged?" logged":""}">
+      <div class="batch-track">
+        <div class="batch-bar" style="height:${Math.max(b.n/maxBatch*BAR_MAX_PCT,2)}%"><div class="batch-count">${b.n}</div></div>
+      </div>
+      <div class="batch-week">${esc(b.week)}</div>
+    </div>`).join("");
+
+  // Channels — attribution comes solely from the weekly Jotform export (the tracker's
+  // Weekly Log channel columns are no longer summed in, to avoid double counting)
+  const chDiv=document.getElementById("channels");
+  const sums={};
+  for (const [k,v] of Object.entries(JOTFORM_INSIGHTS.channelSeed)) sums[k]=(sums[k]||0)+v;
+  const rowsHtml=[];
+  const consumed=new Set();
+  for(const [key,t] of Object.entries(TARGETS)){
+    let actual=0, present=false;
+    if(t.combine){ t.combine.forEach(c=>{ if(c in sums){actual+=sums[c]; consumed.add(c); present=true;} }); }
+    if(key in sums){ actual+=sums[key]; consumed.add(key); present=true; }
+    if(!present) continue;
+    rowsHtml.push(channelRow(t.label, actual, t.lo, t.hi));
+  }
+  // Any new columns added to the sheet later show up automatically
+  for(const [h,v] of Object.entries(sums)){ if(!consumed.has(h)) rowsHtml.push(channelRow(h, v, null, null)); }
+  const maxScale = Math.max(700, ...Object.values(sums)) * 1.05;
+  chDiv.innerHTML = rowsHtml.map(r=>r(maxScale)).join("") || `<div class="empty-state">Channel numbers appear once the confirmed-customer feed is reachable.</div>`;
+
+  document.getElementById("channelNote").textContent = feedLive
+    ? `Actuals from the confirmed-customer list (${JI.n.toLocaleString()} households, last updated ${JI.asOf}). Referrals come from the Referred column and drop-off switchers from the existing-member column, so both cover everyone. The "where did you first hear about us" question was answered by only ${JI.answered} of ${JI.n.toLocaleString()}, so the remaining bars undercount. Answers are free text, keyword-bucketed into these levers — online-search answers currently land in Other. A member can credit more than one channel: these bars measure each lever's contribution, not a headcount, and should never be summed.`
+    : `Actuals from the Jotform signup export (${JI.n.toLocaleString()} members, ${JI.asOf}). The "where did you hear about us" question was answered by ${JI.answered} of ${JI.n.toLocaleString()}, so those bars undercount. A member can credit more than one channel — these bars measure each lever's contribution, not a headcount.`;
+
+  document.getElementById("updated").textContent =
+    `Live from the tracker · loaded ${today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",timeZone:OMAHA})}, ` +
+    `${today.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:OMAHA})} Omaha time`;
+}
+
+function channelRow(label, actual, lo, hi){
+  return (scale)=>{
+    const fillPct=Math.min(100, actual/scale*100);
+    const tLeft = lo!==null? lo/scale*100 : 0;
+    const tW = lo!==null? Math.min(100,(hi-lo)/scale*100+ (hi-lo===0?1:0)) : 0;
+    const targetHtml = lo!==null? `<div class="ch-target" style="left:${tLeft}%;width:${Math.max(tW, .8)}%"></div>`:"";
+    const numsHtml = lo!==null? `<b>${actual.toLocaleString()}</b> / ${lo}–${hi}` : `<b>${actual.toLocaleString()}</b> / target TBD`;
+    const fillHtml = actual>0? `<div class="ch-fill" style="width:${Math.max(fillPct,0.8)}%"></div>`:"";
+    return `<div class="ch-row"><div class="ch-name">${esc(label)}</div>
+      <div class="ch-track">${targetHtml}${fillHtml}</div>
+      <div class="ch-nums">${numsHtml}</div></div>`;
+  };
+}
+
+/* The confirmed-customer list is updated by hand every couple of days. If those exports stop,
+   every percentage on this page silently freezes while still looking authoritative — so say it
+   out loud. STALE_AFTER is deliberately generous: a 3-day gap over a weekend is normal. */
+const STALE_AFTER = 5;
+function showStaleness(feedLive, staleDays, pending){
+  const el = document.getElementById("staleNote");
+  if(!el) return;
+  if(!feedLive){
+    el.className = "stale-state";
+    el.innerHTML = `<b>Showing last known numbers.</b> The confirmed-customer feed didn't load, so
+      the figures below are the most recent snapshot saved into the page rather than live data.`;
+    return;
+  }
+  if(staleDays === null || staleDays <= STALE_AFTER){ el.className=""; el.innerHTML=""; return; }
+  el.className = "stale-state";
+  el.innerHTML = `<b>These numbers may be behind.</b> The newest signup on file is
+    ${staleDays} days old, and the list is normally updated every couple of days.${
+      pending>0?` <b>${pending} newer signup${pending===1?" is":"s are"}</b> sitting in Jotform
+    waiting for the next export.`:""} Treat the
+    percentages as a floor until the next export lands.`;
+}
+
+/* Live per-zip demand table. The Live counts tab publishes zip_q_XXXXX / zip_w_XXXXX rows
+   (raw qualified/waitlist form submissions per zip, counts only — added 2026-08-03, replacing
+   the hand-tallied Jul 18 snapshot). Members per zip come from the confirmed-customer feed.
+   Table = union of all three, sorted by waitlist; zips with fewer than 3 total entries are
+   rolled into an "elsewhere" remainder so out-of-metro one-offs don't flood the table.
+   Returns null when the per-zip rows aren't present, so the baked ZIPS snapshot still renders. */
+function buildZipTable(live, zipMembers){
+  if(!live) return null;
+  const q = {}, w = {};
+  let seen = false, m;
+  for(const [k,v] of Object.entries(live)){
+    if((m = k.match(/^zip_q_(\d{5})$/)))      { q[m[1]] = v; seen = true; }
+    else if((m = k.match(/^zip_w_(\d{5})$/))) { w[m[1]] = v; seen = true; }
+  }
+  if(!seen) return null;
+  const zips = new Set([...Object.keys(q), ...Object.keys(w), ...Object.keys(zipMembers || {})]);
+  const rows = [...zips].map(z => ({ zip:z, m:(zipMembers && zipMembers[z]) || 0, q:q[z] || 0, w:w[z] || 0 }));
+  // Pick the 18 rows by TOTAL activity (members + qualified + waitlist), then display them
+  // sorted by waitlist. Selecting by waitlist alone silently dropped serviced zips with huge
+  // qualified counts (68104 had 130 qualified and no seat at the table) into the remainder line.
+  const eligible = rows.filter(r => r.m + r.q + r.w >= 3);
+  eligible.sort((a,b) => (b.m+b.q+b.w) - (a.m+a.q+a.w));
+  const shown = eligible.slice(0, 18);
+  shown.sort((a,b) => b.w - a.w || b.q - a.q || b.m - a.m);
+  const inTable = new Set(shown.map(r => r.zip));
+  let otherW = 0, otherQ = 0;
+  rows.forEach(r => { if(!inTable.has(r.zip)){ otherW += r.w; otherQ += r.q; } });
+  return { rows: shown, otherW, otherQ };
+}
+
+/* Signups sitting in Jotform NEWER than the newest row on the confirmed-customer sheet.
+   Counted from the hourly jotform_d_YYYY-MM-DD rows in the Live counts tab — written by the
+   same timestamps-only script as the weekly Jotform card; encrypted answers are never read.
+   Returns null when either feed is missing, so the page says nothing rather than guessing.
+   Same-day signups after the last export aren't counted: this is a deliberate floor. */
+function pendingSince(live, dataThrough){
+  if(!live || !/^\d{4}-\d{2}-\d{2}$/.test(String(dataThrough||""))) return null;
+  let sum = 0, seen = false;
+  for(const [k,v] of Object.entries(live)){
+    const m = k.match(/^jotform_d_(\d{4}-\d{2}-\d{2})$/);
+    if(!m) continue;
+    seen = true;
+    if(m[1] > dataThrough) sum += v;   // ISO date strings compare correctly as strings
+  }
+  return seen ? sum : null;
+}
+
+/* Route weights → "What members have kept out of the landfill".
+   Weighing is a SAMPLE: the team scale-tickets about one route week a month, and
+   logs a home count on every other collection day. So the average lbs-per-pickup is
+   measured, and the totals are that average projected across every logged pickup.
+   Data lives in WEIGHT_DAYS (data.js), refreshed monthly from Airtable on the 18th. */
+function renderWeights(){
+  const s = weightStats(WEIGHT_DAYS);
+  if(!s.wk.length) return;
+
+  document.getElementById("weightCards").innerHTML = `
+    <div class="card hot"><div class="label">Kept out of the landfill</div><div class="big">${(s.projectedLbs/2000).toFixed(0)} tons</div><div class="sub">about ${(Math.round(s.projectedLbs/100)*100).toLocaleString()} lbs of food scraps and yard material since the first pickup in April</div></div>
+    <div class="card"><div class="label">Per pickup</div><div class="big">${s.perStop.toFixed(1)} lbs</div><div class="sub">what one cart weighs when it gets collected &mdash; weighed on the scale across ${s.sampleDays} sample collection days</div></div>
+    <div class="card"><div class="label">Pickups so far</div><div class="big">${s.totalStops.toLocaleString()}</div><div class="sub">carts collected since April, counted on every route day</div></div>
+    <div class="card"><div class="label">Yearly pace</div><div class="big">~${Math.round(s.tonsYr)} tons</div><div class="sub">per year at the last four weeks&rsquo; collection rate, before the next route is added</div></div>`;
+
+  const maxW = Math.max(...s.wk.map(w => w.est));
+  document.getElementById("weightChart").innerHTML = s.wk.map(w => `
+    <div class="batch-col" title="${w.weighed ? "Weighed on the scale" : "Estimated from " + w.stops + " pickups"}">
+      <div class="batch-track">
+        <div class="batch-bar" style="height:${Math.max(w.est/maxW*BAR_MAX_PCT, 2)}%;${w.weighed ? "" : "opacity:.55"}"><div class="batch-count">${(w.est/1000).toFixed(1)}k</div></div>
+      </div>
+      <div class="batch-week">${fmtDate(w.mon)}</div>
+    </div>`).join("");
+
+  document.getElementById("weightsNote").innerHTML =
+    `Pounds of food scraps and yard material dropped at Soil Dynamics Composting Farm, through ${s.asOf}. ` +
+    `The truck gets weighed on the scale about one route week a month &mdash; those weeks set the average of ` +
+    `<b>${s.perStop.toFixed(1)} lbs per pickup</b> (${s.measuredLbs.toLocaleString()} lbs over ${s.measuredStops.toLocaleString()} weighed pickups). ` +
+    `Every other week is counted, not weighed, so its bar is estimated at that same rate and shown faded. ` +
+    `Bars are Monday-start route weeks in thousands of lbs.`;
+}
+
+function showError(msg){
+  document.getElementById("updated").textContent="Couldn't load live data";
+  document.getElementById("cards").insertAdjacentHTML("beforebegin",
+    `<div class="error-state"><b>Couldn't reach the tracker.</b> ${msg} — try a refresh, or check that the Weekly Log tab is still published to the web.</div>`);
+}
+
+Promise.allSettled([
+  fetch(SHEET_CSV_URL,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); }),
+  fetch(LIVE_COUNTS_CSV,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); }),
+  fetchCustomerFeed(parseCSV),
+  fetchWeights(parseCSV)
+]).then(([weekly, liveRes, feedRes, weightsRes])=>{
+  if(weekly.status!=="fulfilled"){ showError(weekly.reason.message); return; }
+  const rows=parseCSV(weekly.value);
+  if(!rows.length||rows[0].length<3){ showError("Unexpected sheet format"); return; }
+  let live=null;
+  if(liveRes.status==="fulfilled"){
+    live={};
+    parseCSV(liveRes.value).forEach(r=>{ const v=num(r[1]); if(r[0]&&v!==null) live[r[0].trim()]=v; });
+    if(!("qualified_unique" in live)) live=null; // shape check — fall back to baked numbers
+  }
+  // Confirmed-customer feed: member count, onboarding batches, cart split, referral count,
+  // drop-off switchers, channel mix, zip member counts. Silently keeps the baked values on failure.
+  let feedLive=false, staleDays=null, dataThrough=null, zipMembers=null;
+  if(feedRes.status==="fulfilled" && feedRes.value){
+    const f=applyCustomerFeed(feedRes.value, JOTFORM_INSIGHTS, ZIPS);
+    if(f){
+      MASTER=f.master; MASTER_TOTAL=f.masterTotal;
+      JOTFORM_INSIGHTS=f.insights; ZIPS=f.zips;
+      feedLive=true; staleDays=f.staleDays; dataThrough=f.scalars.data_through;
+      zipMembers=f.zipMembers;
+    }
+  }
+  const pending = pendingSince(live, dataThrough);
+  const zipTable = buildZipTable(live, zipMembers);
+  render(rows, live, feedLive, pending, zipTable);
+  showStaleness(feedLive, staleDays, pending);
+});
+
+// Route weights need no network — WEIGHT_DAYS is baked in data.js and refreshed monthly
+// from Airtable. Rendered outside the fetch chain so a tracker outage can't blank it.
+renderWeights();
+</script>
+</body>
+</html>
