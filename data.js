@@ -230,8 +230,9 @@ const WEIGHTS_CSV_URL = "";
 // 9/10 weights excluded as partial/odd weighings (Brent's call) -- those days count as
 // unweighed. Routeware method: see project memory ccc-routeware-home-counts.
 const WEIGHT_DAYS = [
-    {d:"4/27/2026",stops:61,lbs:2380},{d:"5/4/2026",stops:91,lbs:4840},{d:"5/11/2026",stops:113,lbs:3180},
-    {d:"5/18/2026",stops:56,lbs:1500},{d:"5/19/2026",stops:74,lbs:1760},{d:"5/26/2026",stops:62,lbs:1960},
+    {d:"4/20/2026",stops:51,lbs:null},{d:"4/23/2026",stops:10,lbs:null},{d:"4/27/2026",stops:59,lbs:2380},
+    {d:"5/4/2026",stops:90,lbs:4840},{d:"5/11/2026",stops:108,lbs:3180},{d:"5/18/2026",stops:54,lbs:1500},
+    {d:"5/19/2026",stops:70,lbs:1760},{d:"5/26/2026",stops:60,lbs:1960},{d:"5/27/2026",stops:92,lbs:null},
     {d:"6/1/2026",stops:60,lbs:1800},{d:"6/2/2026",stops:96,lbs:2360},{d:"6/8/2026",stops:70,lbs:2560},
     {d:"6/9/2026",stops:96,lbs:2600},{d:"6/15/2026",stops:73,lbs:2880},{d:"6/16/2026",stops:81,lbs:3400},
     {d:"6/22/2026",stops:65,lbs:3300},{d:"6/23/2026",stops:84,lbs:2380},{d:"6/24/2026",stops:32,lbs:980},
@@ -254,8 +255,9 @@ const WEIGHT_DAYS = [
     {d:"9/28/2026",stops:118,lbs:null},{d:"9/29/2026",stops:147,lbs:null},{d:"9/30/2026",stops:95,lbs:null}
 ];
 
-// Pre-6/1/2026 rows came from the retired Google tracker; kept so launch-to-date
-// tracking survives the move to Airtable.
+// Pre-6/1/2026 rows: weights from the retired Google tracker; pickups re-checked against
+// Routeware on 1 Oct 2026 (stops minus issues). 4/20, 4/23 and 5/27 were route days the old
+// tracker never logged. 4/30 and 5/12 show in Routeware as Scheduled, never completed: left out.
 const WEIGHTS_PRE_AIRTABLE_THROUGH = "5/26/2026";
 const WEIGHTS_AS_OF = "Sep 30, 2026";
 
