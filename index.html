@@ -121,6 +121,18 @@
   .hero .src a{color:var(--pale)}
   footer{margin-top:56px;font-size:.7rem;color:var(--grass);border-top:1px solid var(--pale);padding-top:14px}
   @media(max-width:640px){.ch-row{grid-template-columns:1fr;gap:4px}.ch-nums{text-align:left}}
+  .eq{background:#fff;border-radius:14px;box-shadow:0 6px 18px rgba(15,58,35,.10);padding:26px 24px;display:grid;grid-template-columns:1fr auto 1fr auto 1.2fr;align-items:center;gap:10px 18px}
+  .eq .term{text-align:center}
+  .eq .n{font-family:'Raleway',sans-serif;font-weight:900;font-size:2.4rem;line-height:1.1;color:var(--earthy)}
+  .eq .n small{font-size:1.1rem;font-weight:800}
+  .eq .term.result .n{color:var(--tiger);font-size:2.9rem}
+  .eq .lbl{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:.66rem;color:var(--grass);margin-top:4px}
+  .eq .how{font-size:.72rem;color:var(--grass);margin-top:2px}
+  .eq .op{font-family:'Raleway',sans-serif;font-weight:900;font-size:2rem;color:var(--spearmint)}
+  .eq-foot{display:flex;flex-wrap:wrap;gap:10px 28px;margin-top:14px;font-size:.8rem;color:var(--grass)}
+  .eq-foot b{color:var(--earthy);font-weight:600}
+  .wk-h{font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:.7rem;color:var(--grass);margin:30px 0 4px}
+  @media (max-width:720px){.eq{grid-template-columns:1fr}.eq .op{text-align:center;font-size:1.6rem;line-height:1}#weightChart .batch-count{display:none}}
 </style>
 </head>
 <body>
@@ -134,7 +146,7 @@
     </div>
     <h1>The Road to <span class="accent">1,600</span></h1>
     <div class="updated"><span class="dot"></span><span id="updated">Loading live numbers from the tracker…</span></div>
-    <p class="subline">Help Omaha make history by having the fastest-growing residential composting program in the country (outside of a pandemic year) by getting to 1,600 signups by December 31st. See if we're in your area or join the waitlist at <a href="https://www.hillside.solutions/compostclub/curbside">www.hillside.solutions/curbside</a>.</p>
+    <p class="subline">See if we're in your area or join the waitlist at <a href="https://www.hillside.solutions/compostclub/curbside">www.hillside.solutions/curbside</a>.</p>
   </div>
 
   <div class="wrap hero-cards">
@@ -144,7 +156,7 @@
   <div class="wrap hero-progress">
     <section>
       <h2>Progress to goal</h2>
-      <div class="note">1,600 total members by Dec 31, 2026.</div>
+      <div class="note">Goal: 1,600 member households.</div>
       <div class="progress-shell" id="progressShell">
         <div class="progress-fill" id="progressFill" style="width:0%">0%</div>
       </div>
@@ -198,7 +210,7 @@
     <div class="note" id="weightsNote"></div>
     <div class="cards cards2" id="weightCards"></div>
     <div class="batch-chart" id="weightChart"></div>
-    <div class="src">source: Soil Dynamics load log (Airtable) + pre-June collection tracker</div>
+    <div class="src">source: route records (pickups) + Soil Dynamics scale tickets (weights)</div>
   </section>
 
 
@@ -367,12 +379,11 @@ function render(rows, live, feedLive, pending, zipTable){
   // Cards (hero: 5 cards)
   document.getElementById("cards").innerHTML = `
     <div class="card"><div class="label">Members now</div><div class="big">${current.toLocaleString()}</div><div class="sub">${usingMaster?`confirmed members, ${MASTER.asOf}`:`of ${GOAL.toLocaleString()} goal`}${pending>0?` · <b>+${pending}</b> signed up since, awaiting confirmation`:""}</div></div>
-    <div class="card hot"><div class="label">Still needed</div><div class="big">${stillNeeded===0?"🎉 0":stillNeeded.toLocaleString()}</div><div class="sub">${daysLeft} days left in 2026</div></div>`;
+    <div class="card hot"><div class="label">Still needed</div><div class="big">${stillNeeded===0?"🎉 0":stillNeeded.toLocaleString()}</div><div class="sub">to reach 1,600</div></div>`;
 
   // Cards (below hero: warm leads + new intake)
   document.getElementById("cards2").innerHTML = `
-    <div class="card"><div class="label">Needed / week</div><div class="big">${neededPerWeek.toFixed(1)}</div><div class="sub">to hit Dec 31</div></div>
-    <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">${paceSource} ${badge}</div></div>
+    <div class="card"><div class="label">Current pace</div><div class="big">${avgPace===null?"—":avgPace.toFixed(1)}</div><div class="sub">${paceSource}</div></div>
     ${live && "jotform_week_wed" in live ? `<div class="card hot"><div class="label">Signed up this week</div><div class="big">${live.jotform_week_wed.toLocaleString()}</div><div class="sub">Jotform since Wed · last week: ${(live.jotform_prev_week??"—")}</div></div>` : ""}
     <div class="card"><div class="label">Warm leads</div><div class="big">${poolTotal.toLocaleString()}</div><div class="sub">unique people, qualified + waitlist, ${poolWhen}</div></div>
     ${live && "new_leads_7d" in live ? `<div class="card"><div class="label">New people, last 7 days</div><div class="big">${live.new_leads_7d.toLocaleString()}</div><div class="sub">first-time website form submissions — not payments</div></div>` : ""}`;
@@ -565,28 +576,38 @@ function pendingSince(live, dataThrough){
 function renderWeights(){
   const s = weightStats(WEIGHT_DAYS);
   if(!s.wk.length) return;
+  const tons = s.projectedLbs/2000;
+  const weighedTons = s.measuredLbs/2000;
 
-  document.getElementById("weightCards").innerHTML = `
-    <div class="card hot"><div class="label">Kept out of the landfill</div><div class="big">${(s.projectedLbs/2000).toFixed(0)} tons</div><div class="sub">about ${(Math.round(s.projectedLbs/100)*100).toLocaleString()} lbs of food scraps and yard material since the first pickup in April</div></div>
-    <div class="card"><div class="label">Per pickup</div><div class="big">${s.perStop.toFixed(1)} lbs</div><div class="sub">what one cart weighs when it gets collected &mdash; weighed on the scale across ${s.sampleDays} sample collection days</div></div>
-    <div class="card"><div class="label">Pickups so far</div><div class="big">${s.totalStops.toLocaleString()}</div><div class="sub">carts collected since April, counted on every route day</div></div>
-    <div class="card"><div class="label">Yearly pace</div><div class="big">~${Math.round(s.tonsYr)} tons</div><div class="sub">per year at the last four weeks&rsquo; collection rate, before the next route is added</div></div>`;
+  document.getElementById("weightCards").outerHTML = `
+    <div id="weightCards">
+      <div class="eq">
+        <div class="term"><div class="n">${s.totalStops.toLocaleString()}</div><div class="lbl">Pickups</div><div class="how">counted on every route day</div></div>
+        <div class="op">&times;</div>
+        <div class="term"><div class="n">${s.perStop.toFixed(1)} <small>lbs</small></div><div class="lbl">Average per pickup</div><div class="how">from ${s.sampleDays} days we weighed on the scale</div></div>
+        <div class="op">=</div>
+        <div class="term result"><div class="n">${Math.round(tons)} tons</div><div class="lbl">Kept out of the landfill</div><div class="how">about ${(Math.round(s.projectedLbs/100)*100).toLocaleString()} lbs since April</div></div>
+      </div>
+      <div class="eq-foot">
+        <span>On pace for <b>~${Math.round(s.tonsYr)} tons a year</b> at the last four weeks&rsquo; pickups</span>
+        <span><b>${Math.round(weighedTons)} tons</b> of it went straight across the scale</span>
+      </div>
+    </div>`;
 
-  const maxW = Math.max(...s.wk.map(w => w.est));
+  const maxS = Math.max(...s.wk.map(w => w.stops));
+  document.getElementById("weightChart").insertAdjacentHTML("beforebegin", `<div class="wk-h">Pickups per week</div>`);
   document.getElementById("weightChart").innerHTML = s.wk.map(w => `
-    <div class="batch-col" title="${w.weighed ? "Weighed on the scale" : "Estimated from " + w.stops + " pickups"}">
+    <div class="batch-col" title="${w.stops} pickups${w.weighed ? " · weighed on the scale" : ""}">
       <div class="batch-track">
-        <div class="batch-bar" style="height:${Math.max(w.est/maxW*BAR_MAX_PCT, 2)}%;${w.weighed ? "" : "opacity:.55"}"><div class="batch-count">${(w.est/1000).toFixed(1)}k</div></div>
+        <div class="batch-bar" style="height:${Math.max(w.stops/maxS*BAR_MAX_PCT, 2)}%;${w.weighed ? "" : "opacity:.55"}"><div class="batch-count">${w.stops}</div></div>
       </div>
       <div class="batch-week">${fmtDate(w.mon)}</div>
     </div>`).join("");
 
   document.getElementById("weightsNote").innerHTML =
-    `Pounds of food scraps and yard material dropped at Soil Dynamics Composting Farm, through ${s.asOf}. ` +
-    `The truck gets weighed on the scale about one route week a month &mdash; those weeks set the average of ` +
-    `<b>${s.perStop.toFixed(1)} lbs per pickup</b> (${s.measuredLbs.toLocaleString()} lbs over ${s.measuredStops.toLocaleString()} weighed pickups). ` +
-    `Every other week is counted, not weighed, so its bar is estimated at that same rate and shown faded. ` +
-    `Bars are Monday-start route weeks in thousands of lbs.`;
+    `Every route day, we count the carts we collect. About one week a month, the truck also goes across the scale at Soil Dynamics, ` +
+    `which gives us the average weight of a cart. Multiply the two and you get what members have kept out of the landfill. ` +
+    `Darker bars are weeks we weighed. Data through ${s.asOf}.`;
 }
 
 function showError(msg){
