@@ -224,27 +224,40 @@ const WEIGHTS_CSV_URL = "";
 // with a "No ticket" note are stored as null here for the same reason.
 // Totals are therefore PROJECTED: every logged stop x the measured average lbs/stop.
 // stops === null means the day was weighed but the home count was never entered.
+// stops = carts ACTUALLY collected (Brent, 1 Oct 2026). From 7/13 on that is the driver's
+// Airtable count; for Jun 1-Jul 8 it is Routeware stops minus Issues (no cart out etc.).
+// Truck tare is 20,880 lbs (8/25, 8/26 corrected). 6/24 = 980 lbs net. 8/26, 9/8, 9/9 and
+// 9/10 weights excluded as partial/odd weighings (Brent's call) -- those days count as
+// unweighed. Routeware method: see project memory ccc-routeware-home-counts.
 const WEIGHT_DAYS = [
     {d:"4/27/2026",stops:61,lbs:2380},{d:"5/4/2026",stops:91,lbs:4840},{d:"5/11/2026",stops:113,lbs:3180},
     {d:"5/18/2026",stops:56,lbs:1500},{d:"5/19/2026",stops:74,lbs:1760},{d:"5/26/2026",stops:62,lbs:1960},
-    {d:"6/1/2026",stops:46,lbs:1800},{d:"6/2/2026",stops:101,lbs:2360},{d:"6/8/2026",stops:74,lbs:2560},
-    {d:"6/9/2026",stops:105,lbs:2600},{d:"6/15/2026",stops:79,lbs:2880},{d:"6/16/2026",stops:88,lbs:3400},
-    {d:"6/22/2026",stops:70,lbs:3300},{d:"6/23/2026",stops:91,lbs:2380},{d:"6/24/2026",stops:36,lbs:2400},
-    {d:"6/29/2026",stops:88,lbs:2460},{d:"6/30/2026",stops:92,lbs:2300},{d:"7/1/2026",stops:null,lbs:1120},
-    {d:"7/6/2026",stops:93,lbs:2400},{d:"7/7/2026",stops:null,lbs:2220},{d:"7/8/2026",stops:null,lbs:1080},
+    {d:"6/1/2026",stops:60,lbs:1800},{d:"6/2/2026",stops:96,lbs:2360},{d:"6/8/2026",stops:70,lbs:2560},
+    {d:"6/9/2026",stops:96,lbs:2600},{d:"6/15/2026",stops:73,lbs:2880},{d:"6/16/2026",stops:81,lbs:3400},
+    {d:"6/22/2026",stops:65,lbs:3300},{d:"6/23/2026",stops:84,lbs:2380},{d:"6/24/2026",stops:32,lbs:980},
+    {d:"6/29/2026",stops:83,lbs:2460},{d:"6/30/2026",stops:87,lbs:2300},{d:"7/1/2026",stops:33,lbs:1120},
+    {d:"7/6/2026",stops:90,lbs:2400},{d:"7/7/2026",stops:85,lbs:2220},{d:"7/8/2026",stops:32,lbs:1080},
     {d:"7/13/2026",stops:99,lbs:null},{d:"7/14/2026",stops:105,lbs:null},{d:"7/15/2026",stops:43,lbs:null},
     {d:"7/20/2026",stops:89,lbs:null},{d:"7/21/2026",stops:105,lbs:null},{d:"7/22/2026",stops:44,lbs:null},
-    {d:"7/27/2026",stops:48,lbs:null},{d:"7/28/2026",stops:110,lbs:null},{d:"7/29/2026",stops:47,lbs:null},
+    {d:"7/27/2026",stops:94,lbs:null},{d:"7/28/2026",stops:110,lbs:null},{d:"7/29/2026",stops:47,lbs:null},
     {d:"7/30/2026",stops:17,lbs:null},{d:"8/3/2026",stops:101,lbs:null},{d:"8/4/2026",stops:114,lbs:null},
     {d:"8/5/2026",stops:47,lbs:null},{d:"8/6/2026",stops:6,lbs:null},{d:"8/10/2026",stops:99,lbs:3860},
     {d:"8/11/2026",stops:96,lbs:3500},{d:"8/12/2026",stops:44,lbs:1760},{d:"8/13/2026",stops:11,lbs:500},
-    {d:"8/17/2026",stops:106,lbs:null},{d:"8/18/2026",stops:111,lbs:null}
+    {d:"8/17/2026",stops:106,lbs:null},{d:"8/18/2026",stops:111,lbs:null},{d:"8/19/2026",stops:56,lbs:null},
+    {d:"8/20/2026",stops:19,lbs:null},{d:"8/24/2026",stops:123,lbs:null},{d:"8/25/2026",stops:118,lbs:5520},
+    {d:"8/26/2026",stops:70,lbs:null},{d:"8/27/2026",stops:19,lbs:null},{d:"8/31/2026",stops:125,lbs:null},
+    {d:"9/1/2026",stops:128,lbs:null},{d:"9/2/2026",stops:67,lbs:null},{d:"9/3/2026",stops:23,lbs:null},
+    {d:"9/8/2026",stops:123,lbs:null},{d:"9/9/2026",stops:115,lbs:null},{d:"9/10/2026",stops:64,lbs:null},
+    {d:"9/11/2026",stops:25,lbs:880},{d:"9/14/2026",stops:130,lbs:null},{d:"9/15/2026",stops:132,lbs:null},
+    {d:"9/16/2026",stops:79,lbs:null},{d:"9/17/2026",stops:26,lbs:null},{d:"9/21/2026",stops:120,lbs:null},
+    {d:"9/22/2026",stops:146,lbs:null},{d:"9/23/2026",stops:89,lbs:null},{d:"9/24/2026",stops:36,lbs:null},
+    {d:"9/28/2026",stops:118,lbs:null},{d:"9/29/2026",stops:147,lbs:null},{d:"9/30/2026",stops:95,lbs:null}
 ];
 
 // Pre-6/1/2026 rows came from the retired Google tracker; kept so launch-to-date
 // tracking survives the move to Airtable.
 const WEIGHTS_PRE_AIRTABLE_THROUGH = "5/26/2026";
-const WEIGHTS_AS_OF = "Aug 18, 2026";
+const WEIGHTS_AS_OF = "Sep 30, 2026";
 
 // Back-compat shim: older code paths referenced WEIGHTS_BAKED / fetchWeights.
 const WEIGHTS_BAKED = { asOf: WEIGHTS_AS_OF, days: WEIGHT_DAYS };
@@ -281,7 +294,11 @@ function weightStats(days){
   const wk = [...weeks.values()].sort((a,b) => a.mon - b.mon)
     // Never show a week as lighter than what actually crossed the scale.
     .map(w => ({ ...w, est: Math.max(w.stops * perStop, w.lbs) }));
-  const last4 = wk.slice(-4);
+  // Only count route weeks whose Thursday is on or before the data date, so a week
+  // that is still in progress doesn't drag the yearly pace down.
+  const asOfDt = new Date(WEIGHTS_AS_OF);
+  const done = wk.filter(w => { const th = new Date(w.mon); th.setDate(th.getDate() + 3); return th <= asOfDt; });
+  const last4 = (done.length ? done : wk).slice(-4);
   const avgWeekLbs = last4.reduce((s,w) => s + w.est, 0) / Math.max(last4.length, 1);
 
   return {
