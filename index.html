@@ -268,6 +268,7 @@ const TARGETS = {
   // Ranges below are PROPOSED (Aug 31 2026), scaled off the current run-rate against the
   // 1,600 goal. They are placeholders until the team sets real ones - edit freely.
   "Hillside email":         {lo:150, hi:250, label:"Hillside email"},
+  "Radio ads":              {lo:null,hi:null,label:"Radio ads", always:true},
   "Press / podcast":        {lo:40,  hi:70,  label:"Earned media"},
   "Online search":          {lo:40,  hi:75,  label:"Online search"},
   "Cart / truck sighting":  {lo:30,  hi:60,  label:"Cart / truck sighting"},
@@ -468,7 +469,7 @@ function render(rows, live, feedLive, pending, zipTable){
     let actual=0, present=false;
     if(t.combine){ t.combine.forEach(c=>{ if(c in sums){actual+=sums[c]; consumed.add(c); present=true;} }); }
     if(key in sums){ actual+=sums[key]; consumed.add(key); present=true; }
-    if(!present) continue;
+    if(!present && !t.always) continue;
     rowsHtml.push(channelRow(t.label, actual, t.lo, t.hi));
   }
   // Any new columns added to the sheet later show up automatically

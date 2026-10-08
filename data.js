@@ -59,7 +59,9 @@ function normaliseCart(label){
 
 // "Where did you first hear about this program?" is free text on the form, so it gets
 // keyword-bucketed into the SAME channel names the target ranges already use.
-// Rebuilt 2026-08-31 against all 38 distinct answers on file. Order matters: the newsletter
+// Rebuilt 2026-08-31 against all 38 distinct answers on file. Oct 8 2026: radio split out of
+// Press / podcast into its own "Radio ads" lever (paid radio flight); tested BEFORE the ads test so
+// "radio ad" never lands in Meta ads. Order matters: the newsletter
 // test runs before the news test ("newsletter" contains "news"), and the cart/bin test runs
 // before the neighbour test ("saw a cart in my neighborhood" is a sighting, not a referral).
 // Returns null on purpose for three groups:
@@ -72,9 +74,10 @@ function bucketChannel(label){
   if(/^\s*(facebook|social media)\s*$/.test(s))                                              return null;
   if(/drop[\s-]?off|current (compost club|member)|compost club m|already a member|already using/.test(s)) return null;
   if(/newsletter|e-?mail/.test(s))                                                           return "Hillside email";
+  if(/radio|\bfm\b|kfab|kios/.test(s))                                                      return "Radio ads";
   if(/\bads?\b|ad on|advertis/.test(s))                                                      return "Meta ads";
   if(/nextdoor|facebook group|neighborhood group/.test(s))                                    return "Neighborhood groups";
-  if(/news|paper|podcast|article|press|radio|\btv\b/.test(s))                                 return "Press / podcast";
+  if(/news|paper|podcast|article|press|\btv\b/.test(s))                                 return "Press / podcast";
   if(/search|google|bing|binge|internet|website/.test(s))                                     return "Online search";
   if(/cart|truck|can in|\bbin\b/.test(s))                                                     return "Cart / truck sighting";
   if(/booth|event|\btalk\b|fair|festival|days/.test(s))                                       return "Events, booths & talks";
