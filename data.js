@@ -255,14 +255,17 @@ const WEIGHT_DAYS = [
     {d:"9/11/2026",stops:25,lbs:880},{d:"9/14/2026",stops:130,lbs:null},{d:"9/15/2026",stops:132,lbs:null},
     {d:"9/16/2026",stops:79,lbs:null},{d:"9/17/2026",stops:26,lbs:null},{d:"9/21/2026",stops:120,lbs:null},
     {d:"9/22/2026",stops:146,lbs:null},{d:"9/23/2026",stops:89,lbs:null},{d:"9/24/2026",stops:36,lbs:null},
-    {d:"9/28/2026",stops:118,lbs:null},{d:"9/29/2026",stops:147,lbs:null},{d:"9/30/2026",stops:95,lbs:null}
+    {d:"9/28/2026",stops:118,lbs:null},{d:"9/29/2026",stops:147,lbs:null},{d:"9/30/2026",stops:95,lbs:null},
+    {d:"10/1/2026",stops:33,lbs:null},{d:"10/5/2026",stops:156,lbs:4340},{d:"10/6/2026",stops:128,lbs:3580},
+    {d:"10/7/2026",stops:87,lbs:3120},{d:"10/8/2026",stops:45,lbs:1200},{d:"10/12/2026",stops:96,lbs:null},
+    {d:"10/13/2026",stops:159,lbs:null},{d:"10/14/2026",stops:96,lbs:null},{d:"10/15/2026",stops:44,lbs:null}
 ];
 
 // Pre-6/1/2026 rows: weights from the retired Google tracker; pickups re-checked against
 // Routeware on 1 Oct 2026 (stops minus issues). 4/20, 4/23 and 5/27 were route days the old
 // tracker never logged. 4/30 and 5/12 show in Routeware as Scheduled, never completed: left out.
 const WEIGHTS_PRE_AIRTABLE_THROUGH = "5/26/2026";
-const WEIGHTS_AS_OF = "Sep 30, 2026";
+const WEIGHTS_AS_OF = "Oct 15, 2026";
 
 // Back-compat shim: older code paths referenced WEIGHTS_BAKED / fetchWeights.
 const WEIGHTS_BAKED = { asOf: WEIGHTS_AS_OF, days: WEIGHT_DAYS };
