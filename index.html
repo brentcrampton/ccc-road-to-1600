@@ -116,6 +116,7 @@
   /* Tiny source links under each section — deliberately quiet. They open the team's Google
      Sheets, which are permission-gated: outsiders on this public page get Google's
      "request access" screen, never the data. */
+  #demandMap .muted-tiles{filter:grayscale(1) contrast(.9) brightness(1.06)}
   #demandMap{height:480px;border-radius:14px;border:1px solid var(--pale);background:#eef0e8;z-index:0}
   .map-tools{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-size:.8rem;margin-bottom:10px}
   .map-tools label{display:flex;align-items:center;gap:6px;cursor:pointer}
@@ -195,7 +196,7 @@
 
   <section id="demand">
     <h2>Where the demand lives</h2>
-    <div class="note" id="demandNote">Waitlist households outside our current routes, grouped into half-mile squares. Darker squares mean more neighbors waiting. Outlined areas are where we pick up today.</div>
+    <div class="note" id="demandNote">Waitlist households outside our current routes, grouped into squares about ½ mile on each side. Darker squares mean more neighbors waiting. Dashed outlines are where we pick up today.</div>
     <div class="map-tools"><label><input type="checkbox" id="fccToggle"> Show City of Omaha trash-day zones</label></div>
     <div id="demandMap" role="img" aria-label="Map of waitlist demand and current pickup areas"></div>
     <div class="map-legend" id="demandLegend"></div>
@@ -645,24 +646,25 @@ function renderDemandMap(live){
   const el = document.getElementById("demandMap");
   if(!el || typeof L === "undefined") return;
   const map = L.map(el, {scrollWheelZoom:false}).setView([41.255,-96.07], 11);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-    maxZoom: 17, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 17, className: "muted-tiles", attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
 
   const cells = [];
   const dLat = (live && live.heat_cell_lat) || 0.0072, dLng = (live && live.heat_cell_lng) || 0.0096;
   if(live) Object.keys(live).forEach(k=>{ const m=k.match(/^heat\|(-?[\d.]+)\|(-?[\d.]+)$/); if(m) cells.push({lat:+m[1], lng:+m[2], n:live[k]}); });
-  const shades = ["#F3C9A6","#E9A06C","#D16727","#9E4515"];
-  const max = cells.reduce((a,c)=>Math.max(a,c.n),0);
-  const cuts = [3, Math.max(4,Math.ceil(max*0.25)), Math.max(5,Math.ceil(max*0.5)), Math.max(6,Math.ceil(max*0.75))];
+  // Fixed bins so colors mean the same thing every month.
+  const shades = ["#F6D7BC","#EDB283","#E08A4C","#C9601F","#8E3B0E"];
+  const cuts = [1, 2, 3, 5, 8];
+  const binLabel = i => i===cuts.length-1 ? `${cuts[i]}+` : (cuts[i+1]-cuts[i]===1 ? `${cuts[i]}` : `${cuts[i]}–${cuts[i+1]-1}`);
   const shade = n => shades[cuts.filter(c=>n>=c).length-1] || shades[0];
   const heat = L.layerGroup(cells.map(c=>L.rectangle([[c.lat-dLat/2,c.lng-dLng/2],[c.lat+dLat/2,c.lng+dLng/2]],
-    {stroke:false, fillColor:shade(c.n), fillOpacity:.78}).bindTooltip(`${c.n} households waiting`))).addTo(map);
+    {color:"#ffffff", weight:.5, fillColor:shade(c.n), fillOpacity:.85}).bindTooltip(`${c.n} household${c.n===1?"":"s"} waiting in this ½-mile square`))).addTo(map);
 
   const zones = L.layerGroup().addTo(map);
   fetch(ZONES_URL).then(r=>r.json()).then(j=>{
     L.geoJSON({type:"FeatureCollection",features:j.zones||j.features||[]}, {
-      style:f=>({color:(f.properties&&f.properties.color)||"#0F3A23", weight:2, fillOpacity:.06}),
+      style:f=>({color:(f.properties&&f.properties.color)||"#0F3A23", weight:2.5, fill:false, dashArray:"6 4"}),
       onEachFeature:(f,l)=>l.bindTooltip(`Pickup area: ${esc((f.properties&&f.properties.name)||"")}`)
     }).addTo(zones);
   }).catch(()=>{});
@@ -680,9 +682,9 @@ function renderDemandMap(live){
   });
 
   function renderLegend(withFcc){
-    const heatKey = cells.length ? cuts.map((c,i)=>`<span><span class="sw" style="background:${shades[i]}"></span>${c}+</span>`).join("") + `<span>households waiting</span>` : "";
+    const heatKey = cells.length ? `<span><b>Households waiting per square:</b></span>` + cuts.map((c,i)=>`<span><span class="sw" style="background:${shades[i]}"></span>${binLabel(i)}</span>`).join("") : "";
     const fccKey = withFcc ? Object.keys(DAY_COLORS).map(d=>`<span><span class="sw" style="background:${DAY_COLORS[d]};opacity:.55"></span>City trash ${d}</span>`).join("") : "";
-    document.getElementById("demandLegend").innerHTML = heatKey + `<span><span class="sw" style="border:2px solid #0F3A23;background:transparent"></span>Where we pick up today</span>` + fccKey;
+    document.getElementById("demandLegend").innerHTML = heatKey + `<span><span class="sw" style="border:2px dashed #0F3A23;background:transparent"></span>Where we pick up today</span><span>Each square is about ½ mile × ½ mile</span>` + fccKey;
   }
   renderLegend(false);
 
@@ -690,7 +692,7 @@ function renderDemandMap(live){
     const mapped = live.heat_mapped ? live.heat_mapped.toLocaleString() : "";
     const u = String(live.heat_updated||""); const when = u.length===8 ? new Date(+u.slice(0,4), +u.slice(4,6)-1, +u.slice(6,8)).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "";
     document.getElementById("demandNote").textContent =
-      `${mapped ? mapped+" waitlist households" : "Waitlist households"} outside our current routes, grouped into half-mile squares (3 or more per square, so no single home shows). Darker squares mean more neighbors waiting. Outlined areas are where we pick up today. Turn on the City trash-day zones to see which day each street already has cans out — new routes go on a different day.${when ? " Updated "+when+"." : ""}`;
+      `${mapped ? mapped+" waitlist households" : "Waitlist households"} outside our current routes, grouped into squares about ½ mile on each side (roughly 6 city blocks). Darker squares mean more neighbors waiting. Dashed outlines are where we pick up today. Turn on the City trash-day zones to see which day each street already has cans out — new routes go on a different day.${when ? " Updated "+when+"." : ""}`;
     map.fitBounds(L.featureGroup(heat.getLayers()).getBounds().pad(0.15), {maxZoom:12});
   } else {
     document.getElementById("demandNote").textContent = "The heat map fills in after the first monthly waitlist run. Outlined areas are where we pick up today.";
