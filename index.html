@@ -667,6 +667,8 @@ function renderDemandMap(live){
       style:f=>({color:(f.properties&&f.properties.color)||"#0F3A23", weight:2.5, fill:false, dashArray:"6 4"}),
       onEachFeature:(f,l)=>l.bindTooltip(`Pickup area: ${esc((f.properties&&f.properties.name)||"")}`)
     }).addTo(zones);
+    const b = L.featureGroup(zones.getLayers()).getBounds();
+    if(b.isValid()) map.fitBounds(b.pad(0.35));
   }).catch(()=>{});
 
   let fcc = null;
@@ -693,7 +695,6 @@ function renderDemandMap(live){
     const u = String(live.heat_updated||""); const when = u.length===8 ? new Date(+u.slice(0,4), +u.slice(4,6)-1, +u.slice(6,8)).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "";
     document.getElementById("demandNote").textContent =
       `${mapped ? mapped+" waitlist households" : "Waitlist households"} outside our current routes, grouped into squares about ½ mile on each side (roughly 6 city blocks). Darker squares mean more neighbors waiting. Dashed outlines are where we pick up today. Turn on the City trash-day zones to see which day each street already has cans out — new routes go on a different day.${when ? " Updated "+when+"." : ""}`;
-    map.fitBounds(L.featureGroup(heat.getLayers()).getBounds().pad(0.15), {maxZoom:12});
   } else {
     document.getElementById("demandNote").textContent = "The heat map fills in after the first monthly waitlist run. Outlined areas are where we pick up today.";
   }
