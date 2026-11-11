@@ -7,6 +7,7 @@
 <title>The Road to 1,600 — Curbside Compost Club</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@900&family=Catamaran:wght@800&family=Hepta+Slab:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
   :root{
     --earthy:#0F3A23; --grass:#5B7048; --newgreen:#7E9366; --spearmint:#A6B88A;
@@ -115,6 +116,14 @@
   /* Tiny source links under each section — deliberately quiet. They open the team's Google
      Sheets, which are permission-gated: outsiders on this public page get Google's
      "request access" screen, never the data. */
+  #demandMap{height:480px;border-radius:14px;border:1px solid var(--pale);background:#eef0e8;z-index:0}
+  .map-tools{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-size:.8rem;margin-bottom:10px}
+  .map-tools label{display:flex;align-items:center;gap:6px;cursor:pointer}
+  .map-legend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:.72rem;margin-top:10px}
+  .map-legend .sw{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:5px;vertical-align:-2px}
+  .zipdetails{margin-top:18px}
+  .zipdetails summary{cursor:pointer;font-family:'Catamaran',sans-serif;font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:.8rem;margin-bottom:10px}
+  @media (max-width:600px){#demandMap{height:380px}}
   .src{font-size:.6rem;margin-top:8px;text-align:right;opacity:.5}
   .src a{color:var(--grass);text-decoration:none}
   .src a:hover{text-decoration:underline}
@@ -184,11 +193,17 @@
     <div class="src">source: customer list</div>
   </section>
 
-  <section>
+  <section id="demand">
     <h2>Where the demand lives</h2>
-    <div class="note" id="zipNote">By zip code: confirmed members vs. website-form interest (raw submissions, live sheet counts as of Jul 18). Sorted by waitlist — big waitlist with few members marks the next zones to open: 68164, 68144, 68154, 68135, 68137. Another ~90 waitlist entries are outside the metro or one-offs.</div>
-    <div class="table-scroll" id="zipTable"></div>
-    <div class="src">source: signups + waitlist sheet · customer list</div>
+    <div class="note" id="demandNote">Waitlist households outside our current routes, grouped into half-mile squares. Darker squares mean more neighbors waiting. Outlined areas are where we pick up today.</div>
+    <div class="map-tools"><label><input type="checkbox" id="fccToggle"> Show City of Omaha trash-day zones</label></div>
+    <div id="demandMap" role="img" aria-label="Map of waitlist demand and current pickup areas"></div>
+    <div class="map-legend" id="demandLegend"></div>
+    <details class="zipdetails"><summary>By zip code</summary>
+      <div class="note" id="zipNote">By zip code: confirmed members vs. website-form interest.</div>
+      <div class="table-scroll" id="zipTable"></div>
+    </details>
+    <div class="src">source: signups + waitlist sheet · customer list · route map · City of Omaha recycling zones</div>
   </section>
 
   <section>
@@ -220,6 +235,7 @@
   </footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="data.js"></script>
 <script>
 /* ====== CONFIG ====== */
@@ -617,6 +633,70 @@ function showError(msg){
     `<div class="error-state"><b>Couldn't reach the tracker.</b> ${msg} — try a refresh, or check that the Weekly Log tab is still published to the web.</div>`);
 }
 
+/* Where the demand lives — heat map (added 2026-11-11).
+   Heat squares come from the Live counts tab (rows heat|lat|lng = count), written monthly by the
+   WaitlistDensity Apps Script: waitlist households outside current routes, squares with 3+ only,
+   so no single household can be located. Route outlines and City trash-day zones load live from
+   the route map app. */
+const ZONES_URL = "https://ccc-map-manager.vercel.app/api/zones";
+const FCC_URL   = "https://ccc-map-manager.vercel.app/fcc-zones.geojson";
+const DAY_COLORS = {Monday:"#4095AF",Tuesday:"#7B5EA7",Wednesday:"#5B7048",Thursday:"#13344A",Friday:"#B5A642"};
+function renderDemandMap(live){
+  const el = document.getElementById("demandMap");
+  if(!el || typeof L === "undefined") return;
+  const map = L.map(el, {scrollWheelZoom:false}).setView([41.255,-96.07], 11);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    maxZoom: 17, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  }).addTo(map);
+
+  const cells = [];
+  const dLat = (live && live.heat_cell_lat) || 0.0072, dLng = (live && live.heat_cell_lng) || 0.0096;
+  if(live) Object.keys(live).forEach(k=>{ const m=k.match(/^heat\|(-?[\d.]+)\|(-?[\d.]+)$/); if(m) cells.push({lat:+m[1], lng:+m[2], n:live[k]}); });
+  const shades = ["#F3C9A6","#E9A06C","#D16727","#9E4515"];
+  const max = cells.reduce((a,c)=>Math.max(a,c.n),0);
+  const cuts = [3, Math.max(4,Math.ceil(max*0.25)), Math.max(5,Math.ceil(max*0.5)), Math.max(6,Math.ceil(max*0.75))];
+  const shade = n => shades[cuts.filter(c=>n>=c).length-1] || shades[0];
+  const heat = L.layerGroup(cells.map(c=>L.rectangle([[c.lat-dLat/2,c.lng-dLng/2],[c.lat+dLat/2,c.lng+dLng/2]],
+    {stroke:false, fillColor:shade(c.n), fillOpacity:.78}).bindTooltip(`${c.n} households waiting`))).addTo(map);
+
+  const zones = L.layerGroup().addTo(map);
+  fetch(ZONES_URL).then(r=>r.json()).then(j=>{
+    L.geoJSON({type:"FeatureCollection",features:j.zones||j.features||[]}, {
+      style:f=>({color:(f.properties&&f.properties.color)||"#0F3A23", weight:2, fillOpacity:.06}),
+      onEachFeature:(f,l)=>l.bindTooltip(`Pickup area: ${esc((f.properties&&f.properties.name)||"")}`)
+    }).addTo(zones);
+  }).catch(()=>{});
+
+  let fcc = null;
+  const toggle = document.getElementById("fccToggle");
+  toggle.addEventListener("change", ()=>{
+    if(!toggle.checked){ if(fcc) map.removeLayer(fcc); renderLegend(false); return; }
+    if(fcc){ fcc.addTo(map); fcc.bringToBack(); renderLegend(true); return; }
+    fetch(FCC_URL).then(r=>r.json()).then(g=>{
+      fcc = L.geoJSON(g, {style:f=>{const c=DAY_COLORS[f.properties.day_of_week]||"#6b7280"; return {color:c, weight:1, fillColor:c, fillOpacity:.13};},
+        onEachFeature:(f,l)=>l.bindTooltip(`City trash day: ${esc(f.properties.day_of_week||"")}`)}).addTo(map);
+      fcc.bringToBack(); renderLegend(true);
+    }).catch(()=>{ toggle.checked=false; });
+  });
+
+  function renderLegend(withFcc){
+    const heatKey = cells.length ? cuts.map((c,i)=>`<span><span class="sw" style="background:${shades[i]}"></span>${c}+</span>`).join("") + `<span>households waiting</span>` : "";
+    const fccKey = withFcc ? Object.keys(DAY_COLORS).map(d=>`<span><span class="sw" style="background:${DAY_COLORS[d]};opacity:.55"></span>City trash ${d}</span>`).join("") : "";
+    document.getElementById("demandLegend").innerHTML = heatKey + `<span><span class="sw" style="border:2px solid #0F3A23;background:transparent"></span>Where we pick up today</span>` + fccKey;
+  }
+  renderLegend(false);
+
+  if(cells.length){
+    const mapped = live.heat_mapped ? live.heat_mapped.toLocaleString() : "";
+    const u = String(live.heat_updated||""); const when = u.length===8 ? new Date(+u.slice(0,4), +u.slice(4,6)-1, +u.slice(6,8)).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}) : "";
+    document.getElementById("demandNote").textContent =
+      `${mapped ? mapped+" waitlist households" : "Waitlist households"} outside our current routes, grouped into half-mile squares (3 or more per square, so no single home shows). Darker squares mean more neighbors waiting. Outlined areas are where we pick up today. Turn on the City trash-day zones to see which day each street already has cans out — new routes go on a different day.${when ? " Updated "+when+"." : ""}`;
+    map.fitBounds(L.featureGroup(heat.getLayers()).getBounds().pad(0.15), {maxZoom:12});
+  } else {
+    document.getElementById("demandNote").textContent = "The heat map fills in after the first monthly waitlist run. Outlined areas are where we pick up today.";
+  }
+}
+
 Promise.allSettled([
   fetch(SHEET_CSV_URL,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); }),
   fetch(LIVE_COUNTS_CSV,{cache:"no-store"}).then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.text(); }),
@@ -647,6 +727,7 @@ Promise.allSettled([
   const pending = pendingSince(live, dataThrough);
   const zipTable = buildZipTable(live, zipMembers);
   render(rows, live, feedLive, pending, zipTable);
+  try { renderDemandMap(live); } catch(e) { console.warn("demand map", e); }
   showStaleness(feedLive, staleDays, pending);
 });
 
